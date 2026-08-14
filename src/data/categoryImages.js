@@ -65,15 +65,15 @@ export const CATEGORY_IMAGES = [
     ]
   },
   {
-    "name": "Poojs",
-    "folder": "Poojs",
+    "name": "Pooja",
+    "folder": "Pooja",
     "images": [
-      "/images/categories/Poojs/image%20copy%202.png",
-      "/images/categories/Poojs/image%20copy%203.png",
-      "/images/categories/Poojs/image%20copy%204.png",
-      "/images/categories/Poojs/image%20copy%205.png",
-      "/images/categories/Poojs/image%20copy.png",
-      "/images/categories/Poojs/image.png"
+      "/images/categories/Pooja/image%20copy%202.png",
+      "/images/categories/Pooja/image%20copy%203.png",
+      "/images/categories/Pooja/image%20copy%204.png",
+      "/images/categories/Pooja/image%20copy%205.png",
+      "/images/categories/Pooja/image%20copy.png",
+      "/images/categories/Pooja/image.png"
     ]
   },
   {

@@ -123,6 +123,13 @@ export const api = {
 
   signUpload: (folder) => authed("/api/sign-upload", "POST", { folder }),
 
+  listTestimonials: () => get("/api/testimonials"),
+  createTestimonial: (payload) => authed("/api/testimonials", "POST", payload),
+  updateTestimonial: (id, payload) => authed(`/api/testimonials/${id}`, "PUT", payload),
+  moveTestimonial: (id, direction) =>
+    authed(`/api/testimonials/${id}/position?direction=${direction}`, "PUT"),
+  deleteTestimonial: (id) => authed(`/api/testimonials/${id}`, "DELETE"),
+
   // Public: the contact form. Everything else about leads is admin-only.
   submitLead: (payload) => request("/api/leads", { method: "POST", body: payload }),
   listLeads: () => request("/api/leads", { auth: true }),

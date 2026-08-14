@@ -1052,3 +1052,71 @@
   background: #faedd8;
   border-color: #d4b78e;
 }
+
+/* ------------------------------------------------------------------
+   Testimonials
+   ------------------------------------------------------------------ */
+
+.admin-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-star {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #d8d3ca;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.admin-star:hover {
+  transform: scale(1.12);
+}
+
+.admin-star.is-on {
+  color: #a94b29;
+}
+
+.admin-stars .admin-muted {
+  margin-left: 8px;
+}
+
+.admin-quote__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-quote__stars {
+  color: #a94b29;
+  letter-spacing: 1px;
+  font-size: 0.85rem;
+}
+
+.admin-quote__stars-off {
+  color: #ddd8d0;
+}
+
+.admin-quote__body {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #45433f;
+  max-width: 70ch;
+}
+
+@media (max-width: 767.98px) {
+  .admin-list__row {
+    flex-wrap: wrap;
+  }
+  .admin-list__main {
+    flex: 1 1 100%;
+    order: -1;
+  }
+}

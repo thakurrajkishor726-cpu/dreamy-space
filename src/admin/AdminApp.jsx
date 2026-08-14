@@ -5,6 +5,7 @@ import Categories from "./Categories";
 import ProjectList from "./ProjectList";
 import ProjectEditor from "./ProjectEditor";
 import Leads from "./Leads";
+import Testimonials from "./Testimonials";
 import "./admin.css";
 
 function AdminShell() {
@@ -56,6 +57,9 @@ function AdminShell() {
           <NavLink to="/admin/categories" className="admin-nav__link">
             Categories
           </NavLink>
+          <NavLink to="/admin/testimonials" className="admin-nav__link">
+            Testimonials
+          </NavLink>
           <NavLink to="/admin/enquiries" className="admin-nav__link">
             Enquiries
           </NavLink>
@@ -78,6 +82,7 @@ function AdminShell() {
           <Route path="projects" element={<ProjectList />} />
           <Route path="projects/:id" element={<ProjectEditor />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="testimonials" element={<Testimonials />} />
           <Route path="enquiries" element={<Leads />} />
           <Route path="*" element={<Navigate to="projects" replace />} />
         </Routes>

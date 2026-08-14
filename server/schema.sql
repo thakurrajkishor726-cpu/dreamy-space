@@ -73,6 +73,24 @@ CREATE TABLE IF NOT EXISTS project_category_images (
     updated_at            TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
+-- Client testimonials shown on the home page and the Testimonials page.
+--
+-- rating is constrained in the database as well as the API, because a star row
+-- is rendered by repeating a character `rating` times — a stray 0 or 9 from a
+-- direct SQL edit would show as no stars or a broken row.
+CREATE TABLE IF NOT EXISTS testimonials (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT    NOT NULL,
+    designation TEXT    NOT NULL DEFAULT '',
+    rating      INTEGER NOT NULL DEFAULT 5 CHECK (rating BETWEEN 1 AND 5),
+    comment     TEXT    NOT NULL,
+    position    INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_testimonials_order ON testimonials (position, id);
+
 -- Enquiries from the public contact form.
 --
 -- This is personal data belonging to people who have not bought anything yet,

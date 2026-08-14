@@ -633,3 +633,170 @@ def test_init_schema_is_safe_to_run_twice():
     assert "show_in_dashboard" in {
         row["name"] for row in db.query("PRAGMA table_info(categories)")
     }
+
+
+# --------------------------------------------------------------------------
+# Testimonials
+# --------------------------------------------------------------------------
+
+
+QUOTE = {
+    "name": "Ananya Sharma",
+    "designation": "Homeowner, Whitefield",
+    "rating": 5,
+    "comment": "They measured everything twice and the tall unit is the thing I use most.",
+}
+
+
+def make_quote(**overrides):
+    response = client.post("/api/testimonials", json={**QUOTE, **overrides}, headers=auth(ADMIN))
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def test_testimonials_are_public_to_read():
+    make_quote(name="Publicly Visible")
+    listed = client.get("/api/testimonials")
+    assert listed.status_code == 200
+    assert any(row["name"] == "Publicly Visible" for row in listed.json())
+
+
+def test_creating_a_testimonial_requires_admin():
+    assert client.post("/api/testimonials", json=QUOTE).status_code == 401
+    assert client.post("/api/testimonials", json=QUOTE, headers=auth(PLAIN)).status_code == 403
+
+
+def test_testimonial_round_trips_every_field():
+    created = make_quote(name="Round Trip", rating=4)
+    assert created["name"] == "Round Trip"
+    assert created["designation"] == QUOTE["designation"]
+    assert created["rating"] == 4
+    assert created["comment"] == QUOTE["comment"]
+
+
+def test_rating_must_be_one_to_five():
+    for bad in (0, 6, -1, 99):
+        response = client.post(
+            "/api/testimonials", json={**QUOTE, "rating": bad}, headers=auth(ADMIN)
+        )
+        assert response.status_code == 422, f"rating {bad} should be rejected"
+
+
+def test_database_also_rejects_an_out_of_range_rating():
+    """The API validates, but a star row is rendered by repeating a character
+    `rating` times — a direct SQL write must not be able to break it."""
+    import pytest as _pytest
+
+    with _pytest.raises(Exception):
+        db.execute(
+            "INSERT INTO testimonials (name, comment, rating) VALUES (?, ?, ?)",
+            ("Bad Row", "nope", 9),
+        )
+
+
+def test_whitespace_only_name_or_comment_is_rejected():
+    """min_length alone would pass three spaces and then store an empty
+    string, putting a nameless quote on the home page."""
+    for field in ("name", "comment"):
+        for blank in ("", "   ", "\n\t"):
+            response = client.post(
+                "/api/testimonials", json={**QUOTE, field: blank}, headers=auth(ADMIN)
+            )
+            assert response.status_code == 422, f"{field}={blank!r} should be rejected"
+
+
+def test_surrounding_whitespace_is_trimmed_not_rejected():
+    created = make_quote(name="  Padded Name  ", comment="  Padded comment.  ")
+    assert created["name"] == "Padded Name"
+    assert created["comment"] == "Padded comment."
+
+
+def test_a_rejected_write_does_not_wedge_the_connection():
+    """A statement that raises leaves its transaction open; the thread-local
+    connection is long lived, so the next write would fail with "database is
+    locked" and look nothing like its cause."""
+    import pytest as _pytest
+
+    with _pytest.raises(Exception):
+        db.execute(
+            "INSERT INTO testimonials (name, comment, rating) VALUES (?, ?, ?)",
+            ("Wedge Test", "nope", 42),
+        )
+
+    # The very next write must still succeed.
+    assert make_quote(name="After A Failed Write")["name"] == "After A Failed Write"
+
+
+def test_updating_a_testimonial():
+    created = make_quote(name="Before Edit")
+    updated = client.put(
+        f"/api/testimonials/{created['id']}",
+        json={**QUOTE, "name": "After Edit", "rating": 3},
+        headers=auth(ADMIN),
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["name"] == "After Edit"
+    assert updated.json()["rating"] == 3
+
+
+def test_updating_requires_admin():
+    created = make_quote(name="Guarded Edit")
+    assert client.put(f"/api/testimonials/{created['id']}", json=QUOTE).status_code == 401
+    assert (
+        client.put(
+            f"/api/testimonials/{created['id']}", json=QUOTE, headers=auth(PLAIN)
+        ).status_code
+        == 403
+    )
+
+
+def test_deleting_a_testimonial():
+    created = make_quote(name="To Delete")
+    assert (
+        client.delete(f"/api/testimonials/{created['id']}", headers=auth(ADMIN)).status_code == 204
+    )
+    assert all(row["id"] != created["id"] for row in client.get("/api/testimonials").json())
+
+
+def test_deleting_requires_admin():
+    created = make_quote(name="Guarded Delete")
+    assert client.delete(f"/api/testimonials/{created['id']}", headers=auth(PLAIN)).status_code == 403
+
+
+def test_missing_testimonial_is_404_not_500():
+    assert client.put("/api/testimonials/999999", json=QUOTE, headers=auth(ADMIN)).status_code == 404
+    assert client.delete("/api/testimonials/999999", headers=auth(ADMIN)).status_code == 404
+
+
+def test_reordering_swaps_neighbours_and_holds():
+    """Order is what the site displays, so it has to survive a round trip."""
+    db.execute("DELETE FROM testimonials")
+    first = make_quote(name="First")
+    second = make_quote(name="Second")
+    third = make_quote(name="Third")
+
+    order = lambda: [r["name"] for r in client.get("/api/testimonials").json()]  # noqa: E731
+    assert order() == ["First", "Second", "Third"]
+
+    moved = client.put(
+        f"/api/testimonials/{third['id']}/position?direction=up", headers=auth(ADMIN)
+    )
+    assert moved.status_code == 200, moved.text
+    assert order() == ["First", "Third", "Second"]
+
+    client.put(f"/api/testimonials/{first['id']}/position?direction=down", headers=auth(ADMIN))
+    assert order() == ["Third", "First", "Second"]
+
+    # Already last: a no-op, not an error and not a corrupted order.
+    client.put(f"/api/testimonials/{second['id']}/position?direction=down", headers=auth(ADMIN))
+    assert order() == ["Third", "First", "Second"]
+
+
+def test_reordering_requires_admin():
+    row = client.get("/api/testimonials").json()[0]
+    assert (
+        client.put(
+            f"/api/testimonials/{row['id']}/position?direction=up", headers=auth(PLAIN)
+        ).status_code
+        == 403
+    )

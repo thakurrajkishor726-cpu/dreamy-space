@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .. import db
 from ..security import require_admin
@@ -7,9 +7,17 @@ from ..security import require_admin
 router = APIRouter(prefix="/api/categories", tags=["categories"])
 
 
+def _stripped(value):
+    """Strip before length validation, so a name of only spaces is rejected
+    rather than stored as an empty string."""
+    return value.strip() if isinstance(value, str) else value
+
+
 class CategoryBody(BaseModel):
     name: str = Field(min_length=1)
     show_in_dashboard: bool = True
+
+    _strip = field_validator("name", mode="before")(_stripped)
 
 
 class CategoryPatch(BaseModel):
@@ -18,6 +26,8 @@ class CategoryPatch(BaseModel):
 
     name: str | None = Field(default=None, min_length=1)
     show_in_dashboard: bool | None = None
+
+    _strip = field_validator("name", mode="before")(_stripped)
 
 
 class ImageBody(BaseModel):

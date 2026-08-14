@@ -52,9 +52,12 @@ cp .env.example .env          # then fill it in
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-# once, to load the six categories from public/images/categories
+# once, to load categories + their images from public/images/categories
 set -a && source .env && set +a
 .venv/bin/python scripts/seed_categories.py
+
+# once, to load the starter testimonials (placeholders — replace them)
+.venv/bin/python scripts/seed_testimonials.py
 
 # create your login
 .venv/bin/python scripts/create_admin.py you@example.com "Your Name"
@@ -83,6 +86,7 @@ category_images           category_id, image_url, position
 projects                  name, location
 project_categories        project_id, category_id
 project_category_images   project_categories_id, image_url, position
+testimonials              name, designation, rating (1-5), comment, position
 leads                     name, email, phone, service, message, handled
 ```
 

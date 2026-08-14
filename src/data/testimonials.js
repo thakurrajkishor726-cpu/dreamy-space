@@ -1,13 +1,14 @@
 /**
- * PLACEHOLDER CONTENT.
+ * FALLBACK ONLY — the `testimonials` table is the source of truth now, and the
+ * admin edits it directly. This list is used when the API is unreachable on a
+ * cold load, so the page is never blank.
  *
- * These are written examples, not real client reviews. Replace them with
- * genuine feedback before the site goes live: published testimonials that
- * nobody actually gave are misleading to customers, and in India fall under
- * the Consumer Protection Act's rules on misleading advertisements.
- *
- * When you are ready to manage these properly, add a `testimonials` table to
- * the Turso schema and this file goes away.
+ * It is also PLACEHOLDER CONTENT: written examples, not real client reviews.
+ * scripts/seed_testimonials.py loaded the same six into the table. Replace
+ * them with genuine feedback before the site goes live — published
+ * testimonials nobody actually gave are misleading to customers, and in India
+ * fall under the Consumer Protection Act's rules on misleading
+ * advertisements.
  */
 
 export const TESTIMONIALS = [

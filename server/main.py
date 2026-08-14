@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import db
-from .routers import auth, categories, leads, projects, uploads
+from .routers import auth, categories, leads, projects, testimonials, uploads
 
 ALLOWED_ORIGINS = [
     origin.strip()
@@ -51,6 +51,7 @@ app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(leads.router)
 app.include_router(projects.router)
+app.include_router(testimonials.router)
 app.include_router(uploads.router)
 
 

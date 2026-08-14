@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { loadPublicProjects } from "../../lib/publicCatalogue";
-import { cloudinaryUrl } from "../../lib/cloudinary";
+import ProjectCard from "../ProjectCard";
 
 /**
  * Real projects from the catalogue, not stock photography.
@@ -35,39 +34,15 @@ export default function ProjectHighlights() {
           </p>
         </header>
 
-        <div className="row g-4">
-          {projects.map((project, index) => {
-            const cover = project.images[0];
-            return (
-              <div className="col-12 col-md-6 col-lg-4" key={project.id}>
-                <motion.article
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.25 }}
-                  transition={{ duration: 0.65, delay: index * 0.1 }}
-                  className="project-card card-lift"
-                >
-                  {/* Deep-link so the portfolio scrolls to this exact job rather than
-                      dropping the visitor at the top of the grid. */}
-                  <Link to={`/projects?project=${project.id}`} aria-label={project.title}>
-                    <div className="project-card__media mb-3">
-                      {cover && (
-                        <img
-                          src={cloudinaryUrl(cover.url, { width: 800, height: 600 })}
-                          alt={project.title}
-                          loading="lazy"
-                        />
-                      )}
-                    </div>
-                    <h3 className="h5 mb-1">{project.title}</h3>
-                    <p className="info-subheading mb-0">
-                      {[project.categories[0], project.location].filter(Boolean).join(" · ")}
-                    </p>
-                  </Link>
-                </motion.article>
-              </div>
-            );
-          })}
+        <div className="projects-grid">
+          {projects.map((project, index) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              index={index}
+              to={`/projects?project=${project.id}`}
+            />
+          ))}
         </div>
 
         <div className="text-center mt-5">

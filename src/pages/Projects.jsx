@@ -129,13 +129,15 @@ function Lightbox({ isOpen, items = [], currentIndex = 0, onClose, onPrev, onNex
 }
 
 /**
- * The card used to render only the cover with the first category stamped over
- * it, so a job called "Whitefield Apartment" in Bengaluru showed up as
- * "CROCKERY" and nothing else. The project's own name and location lead now;
- * the categories are secondary, and all of them are listed rather than just
- * the first.
+ * The project's own name and location lead; categories are secondary, and all
+ * of them are listed rather than just the first.
+ *
+ * Column spans are nth-child rules in the stylesheet, so the grid adapts to
+ * however many projects are published — a single job becomes a wide feature
+ * with the copy beside it rather than one narrow card marooned in an empty
+ * row, and a part-filled last row spreads to fill instead of trailing off.
  */
-function ProjectCard({ project, onClick, isTarget }) {
+function ProjectCard({ project, index, onClick, isTarget }) {
   const cover = project.images[0];
   const extra = project.images.length - 1;
 
@@ -170,6 +172,7 @@ function ProjectCard({ project, onClick, isTarget }) {
         )}
 
         <span className="project-card__scrim" aria-hidden="true" />
+        <span className="project-card__index">{String(index + 1).padStart(2, "0")}</span>
 
         {extra > 0 && (
           <span className="project-card__count">
@@ -345,17 +348,17 @@ export default function Projects() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25 }}
-                className="row g-4"
+                className="projects-grid"
               >
                 <AnimatePresence mode="popLayout">
                   {visible.map((project, index) => (
-                    <div className="col-12 col-md-6 col-lg-3" key={project.id}>
-                      <ProjectCard
-                        project={project}
-                        isTarget={project.id === targetId}
-                        onClick={() => setLightboxIndex(offsets[index])}
-                      />
-                    </div>
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      index={index}
+                      isTarget={project.id === targetId}
+                      onClick={() => setLightboxIndex(offsets[index])}
+                    />
                   ))}
                 </AnimatePresence>
               </motion.div>

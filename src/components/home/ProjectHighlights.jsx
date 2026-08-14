@@ -26,7 +26,7 @@ export default function ProjectHighlights() {
           <div className="ds-head__title-block">
             <span className="ds-eyebrow">Recent work</span>
             <h2 className="ds-title">
-              Finished jobs, <em>around Bengaluru</em>
+              Jobs we have <em>finished</em>
             </h2>
           </div>
           <p className="ds-lead">

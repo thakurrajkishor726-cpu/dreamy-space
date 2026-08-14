@@ -13,7 +13,10 @@
 // Bump when the cached shape changes, so stale entries are ignored rather
 // than deserialised into something the UI doesn't understand.
 const VERSION = "v1";
-const PREFIX = `cnc:catalogue:${VERSION}:`;
+const PREFIX = `ds:catalogue:${VERSION}:`;
+// Entries written before the rename. Swept on clear so they do not sit in
+// visitors' storage forever.
+const LEGACY_PREFIX = "cnc:catalogue:";
 const DEFAULT_TTL_MS = 10 * 60 * 1000;
 
 const storage = () => {
@@ -74,8 +77,10 @@ export function clearCatalogueCache() {
     for (let i = 0; i < store.length; i += 1) {
       const key = store.key(i);
       // Match on the un-versioned prefix so a version bump also clears
-      // entries written by older builds.
-      if (key && key.startsWith("cnc:catalogue:")) stale.push(key);
+      // entries written by older builds, and sweep the pre-rename ones too.
+      if (key && (key.startsWith("ds:catalogue:") || key.startsWith(LEGACY_PREFIX))) {
+        stale.push(key);
+      }
     }
     stale.forEach((key) => store.removeItem(key));
   } catch {

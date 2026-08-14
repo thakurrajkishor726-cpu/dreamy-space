@@ -1,69 +1,86 @@
 # Dreamy Space
 
-An interior design studio site, originally built as a faithful rebuild of
-[creativenconcepts.com](https://creativenconcepts.com/) — same stack, layout, design tokens and
-animations — and since rebranded, with a catalogue admin on FastAPI + Turso + Cloudinary.
+Site and catalogue admin for Dreamy Space, an interior design studio in
+Bengaluru. Made-to-measure wardrobes, TV units, shoe racks, crockery units,
+pooja units and wall panelling.
+
+One repo, one deploy: a Vite/React site and a FastAPI service that share an
+origin on Vercel.
 
 ## Stack
 
-Matches the original build exactly:
+- **Vite 8 + React 19**, React Router 7, Bootstrap 5.3 for the grid
+- **Framer Motion** — page and section reveals, the project lightbox
+- **GSAP + ScrollTrigger** — the work grid's rise and parallax
+- **FastAPI + Pydantic v2** on **Turso** (libSQL), **Cloudinary** for uploads
+- **Fraunces** for display, **Inter** for everything else
 
-- **Vite + React 19** — the original ships a Vite/React SPA
-- **React Router 7** — same route table (`/`, `/about/:section`, `/services/:category/:slug`,
-  `/modular-journey`, `/projects`, `/testimonials`, `/contact`)
-- **Bootstrap 5.3** — the original's grid and utility layer
-- **Framer Motion** — hero crossfade, scroll reveals, project lightbox
-- **GSAP + ScrollTrigger** — the 3D card tilt in the "What We Offer" grid
-- **Swiper** — service gallery carousel
-- **react-icons** — nav carets, footer contact/social glyphs
+## Design
 
-## Design system
-
-`src/styles/app.css` carries the original's design tokens verbatim:
+`src/styles/app.css` holds the whole system. Warm plaster ground, deep
+green-black ink for the dark bands, burnt terracotta as the accent:
 
 ```
---brand-50 #F1F1F1   --brand-500 #8e836f   --brand-950 #221f1b
---active-hover-color #906E49          --header-height 82px
+--ds-canvas #f5f1ea   --ds-ink #1c2b26   --ds-clay #a94b29
+--ds-text   #1f2a26   --ds-muted #5e6b64
 ```
 
-Typography is Poppins (300–700) throughout; `.font-serif` is aliased to Poppins exactly as the
-original does.
+Colour pairs are checked to WCAG AA: clay is 5.0:1 on the canvas and 5.6:1
+behind white button text.
+
+Layouts adapt to however much content exists rather than assuming a count.
+The home work grid and the projects grid both derive their column spans from
+`nth-child` rules, so adding a category or publishing a project can never
+leave the layout and the data disagreeing.
 
 ## Data
 
-Live content is read from the same public API the original uses
-(`https://api.creativenconcepts.com`):
+Everything the site shows comes from Turso through the API, except the
+category showcase images that ship with the frontend.
 
-| Endpoint | Used by |
+| Table | Holds |
 | --- | --- |
-| `/api/v1/company-settings` | navbar, footer, contact info, WhatsApp number |
-| `/api/v1/projects` | portfolio grid |
-| `/api/v1/team` | About → Our Team |
-| `/api/v1/testimonials` | Client Stories |
-| `/api/v1/contact-us` | contact form submission |
+| `users` | admin logins, bcrypt hashes |
+| `categories` | name, `show_in_dashboard` |
+| `category_images` | the category's own photos, local path or Cloudinary URL |
+| `projects` / `project_categories` | jobs, and which categories each covers |
+| `project_category_images` | photos, per project *and* category |
+| `testimonials` | name, designation, rating, comment |
+| `leads` | contact form enquiries |
 
-Static content — the service catalog, the 11-step modular journey, hero banners — lives under
-`src/data/` and resolves its imagery through `import.meta.glob` over `src/assets/images/`, the same
-way the original bundles it.
+Images hang off `project_categories`, not `projects`: a job tagged both
+*TV Unit* and *Shoe Rack* keeps a separate set of photos for each.
 
-## Layout parity
+## Admin
 
-Verified against the live site at 1440×1000: navbar height 95px, hero copy block, section rhythm,
-and footer columns all land on the same coordinates.
+`/admin`, behind a bcrypt login and a short-lived JWT. Manage projects and
+their per-category image sets, categories and their showcase images, whether
+each category appears on the home page, testimonials, and the enquiries the
+contact form collects.
 
-## Running
+## Getting started
+
+See [SETUP.md](SETUP.md) — credentials, seeding, running both halves, and how
+the Vercel deployment is laid out.
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm run build
-npm run preview
+npm run dev      # site on :5173
+npm run api      # API on :8000  (API_PORT overrides both)
 ```
 
-Client-side routing means any host must fall back to `index.html` for unknown paths.
+## Logo
 
-## Assets
+`public/images/logo/logo.jpeg` is the source. `scripts/build_logo.py` derives
+the transparent PNG, a light variant for dark backgrounds, an SVG and the
+monogram from it. Re-run it after replacing the source.
 
-221 project/service/journey/banner images plus the brand logo wall and the About page background
-video were pulled from the original deployment and restored to their source folder structure under
-`src/assets/images/` and `public/`.
+## Tests
+
+```bash
+.venv/bin/python -m pytest tests -q
+```
+
+These run against a throwaway local SQLite file — libSQL is SQLite, so it is
+the same code path that hits Turso in production, with none of the risk to
+live data.

@@ -21,23 +21,12 @@
   height: 100vh;
 }
 
+/* The sidebar is dark, so it takes the light lockup. */
 .admin-sidebar__brand img {
-  height: 42px;
+  height: 62px;
   width: auto;
   object-fit: contain;
-}
-
-/* The sidebar is dark, so this has to be the light form of the wordmark. */
-.admin-sidebar__wordmark {
-  font-family: "Fraunces", Georgia, serif;
-  font-size: 1.2rem;
-  font-weight: 500;
-  letter-spacing: -0.015em;
-  color: #f4f1eb;
-  display: inline-block;
-  border-left: 3px solid #c2603c;
-  padding-left: 10px;
-  line-height: 1.2;
+  display: block;
 }
 
 .admin-nav {
@@ -754,6 +743,7 @@
 }
 
 .admin-auth__logo {
+  object-fit: contain;
   height: 46px;
   width: auto;
   object-fit: contain;

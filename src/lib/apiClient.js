@@ -11,7 +11,7 @@
 import { clearCatalogueCache } from "./catalogueCache";
 
 const BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-const TOKEN_KEY = "cnc:token";
+const TOKEN_KEY = "ds:token";
 
 export const apiUrl = (path) => `${BASE}${path}`;
 

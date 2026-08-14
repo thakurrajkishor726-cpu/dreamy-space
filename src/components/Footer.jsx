@@ -44,7 +44,7 @@ export default function Footer() {
       <div className="container">
         <div className="ds-footer__grid">
           <div className="ds-footer__brand">
-            <Wordmark tone="light" className="mb-4" />
+            <Wordmark tone="light" variant="lockup" className="mb-4" />
             <p className="ds-footer__blurb">
               Made-to-measure interiors for homes and offices in Bengaluru. We handle the
               drawings, the making and the fitting, so one team is answerable from start to

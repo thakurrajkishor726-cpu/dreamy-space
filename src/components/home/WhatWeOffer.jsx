@@ -1,14 +1,14 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { CATEGORY_IMAGES } from "../../data/categoryImages";
+import { useCategories } from "../../lib/useCategories";
 import CategorySlideshow from "./CategorySlideshow";
 
 /**
- * Driven entirely by public/images/categories/<Folder_Name>/ — the tile title
- * is the folder name with underscores replaced. Add a folder, run
- * `npm run categories:manifest`, and it appears here with no code change.
+ * The categories flagged "show on home page" in the admin, with the images
+ * filed against each one. Toggle a category off and its tile disappears from
+ * here without affecting the nav, Our Work, or project tagging.
  *
  * The grid runs 7/5 and 5/7 across twelve columns so the rows alternate rather
  * than reading as an even three-across block, and the caption sits over the
@@ -21,6 +21,12 @@ const isWide = (index) => index % 4 === 0 || index % 4 === 3;
 export default function WhatWeOffer() {
   const rootRef = useRef(null);
   const tilesRef = useRef([]);
+  const { categories, settled } = useCategories();
+
+  const shown = useMemo(
+    () => categories.filter((category) => category.showInDashboard && category.images.length > 0),
+    [categories],
+  );
 
   useLayoutEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -63,9 +69,13 @@ export default function WhatWeOffer() {
 
     ScrollTrigger.refresh();
     return () => ctx.revert();
-  }, []);
+    // Re-run once the real list arrives: the tiles the triggers were built
+    // against are gone by then.
+  }, [shown.length]);
 
-  if (!CATEGORY_IMAGES.length) return null;
+  // Hold the section back until we know the real flags, otherwise a category
+  // the owner has hidden flashes up on a first visit before the API answers.
+  if (!settled || !shown.length) return null;
 
   return (
     <section ref={rootRef} className="work section-padding">
@@ -74,7 +84,7 @@ export default function WhatWeOffer() {
           <div className="ds-head__title-block">
             <span className="ds-eyebrow">What we make</span>
             <h2 className="ds-title">
-              Six things we build, <em>properly</em>
+              What we build, <em>properly</em>
             </h2>
           </div>
           <p className="ds-lead">
@@ -84,10 +94,10 @@ export default function WhatWeOffer() {
         </header>
 
         <div className="work__grid">
-          {CATEGORY_IMAGES.map((category, index) => (
+          {shown.map((category, index) => (
             <article
               className={`work__tile ${isWide(index) ? "work__tile--wide" : ""}`}
-              key={category.folder}
+              key={category.id}
               ref={(node) => {
                 tilesRef.current[index] = node;
               }}

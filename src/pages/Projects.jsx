@@ -177,7 +177,6 @@ export default function Projects() {
   const [visibleCount, setVisibleCount] = useState(12);
   const [projects, setProjects] = useState(null);
   const [allCategories, setAllCategories] = useState([]);
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const fetchedRef = useRef(false);
 
@@ -188,7 +187,9 @@ export default function Projects() {
     loadPublicProjects().then((result) => {
       setProjects(result.projects);
       setAllCategories(result.categories);
-      if (result.error) setError(result.error);
+      // Logged, not surfaced: a visitor can do nothing about it and the page
+      // already renders whatever it managed to load.
+      if (result.error) console.error("Projects load failed:", result.error);
       setLoading(false);
     });
   }, []);
@@ -258,12 +259,6 @@ export default function Projects() {
             </div>
           ) : (
             <>
-              {error && (
-                <p className="text-warning small mb-3">
-                  ⚠️ Showing cached projects. Live data unavailable.
-                </p>
-              )}
-
               <div className="ds-filters">
                 {categories.map((category) => (
                   <button

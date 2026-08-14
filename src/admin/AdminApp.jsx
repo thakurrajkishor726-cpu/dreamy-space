@@ -46,7 +46,7 @@ function AdminShell() {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <Link to="/" className="admin-sidebar__brand">
-          <span className="admin-sidebar__wordmark">Dreamy&nbsp;Spaces</span>
+          <span className="admin-sidebar__wordmark">Dreamy&nbsp;Space</span>
         </Link>
 
         <nav className="admin-nav">

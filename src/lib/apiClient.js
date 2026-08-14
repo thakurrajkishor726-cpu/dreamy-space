@@ -101,8 +101,18 @@ export const api = {
 
   listCategories: () => get("/api/categories"),
   createCategory: (name) => authed("/api/categories", "POST", { name }),
-  updateCategory: (id, name) => authed(`/api/categories/${id}`, "PATCH", { name }),
+  // PATCH takes a partial body, so renaming and toggling dashboard visibility
+  // are independent and neither overwrites the other.
+  updateCategory: (id, patch) => authed(`/api/categories/${id}`, "PATCH", patch),
   deleteCategory: (id) => authed(`/api/categories/${id}`, "DELETE"),
+
+  listCategoryImages: (id) => get(`/api/categories/${id}/images`),
+  replaceCategoryImages: (id, images) =>
+    authed(`/api/categories/${id}/images`, "PUT", { images }),
+  addCategoryImage: (id, imageUrl) =>
+    authed(`/api/categories/${id}/images`, "POST", { image_url: imageUrl }),
+  deleteCategoryImage: (id, imageId) =>
+    authed(`/api/categories/${id}/images/${imageId}`, "DELETE"),
 
   listProjects: (categoryId) =>
     get(categoryId ? `/api/projects?category_id=${categoryId}` : "/api/projects"),

@@ -1,4 +1,4 @@
--- Dreamy Spaces catalogue schema (SQLite / libSQL).
+-- Dreamy Space catalogue schema (SQLite / libSQL).
 --
 -- Every table carries id / created_at / updated_at. Timestamps are stored as
 -- ISO-8601 UTC text, which SQLite compares and sorts correctly as strings.
@@ -15,12 +15,33 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
+-- show_in_dashboard gates whether the category gets a tile in the "What we
+-- make" grid on the home page. It does not hide the category anywhere else:
+-- the nav, the Our Work page and the project tagging all still list it.
 CREATE TABLE IF NOT EXISTS categories (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    name              TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+    show_in_dashboard INTEGER NOT NULL DEFAULT 1,
+    created_at        TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at        TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- The category's own showcase photos, separate from project photos.
+--
+-- image_url holds either a local path served by the frontend
+-- (/images/categories/<Folder>/<file>, which is what the originals are) or a
+-- Cloudinary URL for anything uploaded through the admin since. Both render
+-- the same way: cloudinaryUrl() passes non-Cloudinary URLs through untouched.
+CREATE TABLE IF NOT EXISTS category_images (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    name        TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    image_url   TEXT    NOT NULL,
+    position    INTEGER NOT NULL DEFAULT 0,
     created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     updated_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
+
+CREATE INDEX IF NOT EXISTS idx_ci_category ON category_images (category_id, position);
 
 CREATE TABLE IF NOT EXISTS projects (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,

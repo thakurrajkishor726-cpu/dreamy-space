@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { cloudinaryUrl } from "../../lib/cloudinary";
 
 const INTERVAL_MS = 3800;
 
@@ -60,7 +61,8 @@ export default function CategorySlideshow({ images, alt, startDelayMs = 0, showD
       {images.map((src, i) => (
         <img
           key={src}
-          src={src}
+          // Local originals pass through; Cloudinary uploads get resized.
+          src={cloudinaryUrl(src, { width: 900, height: 700 })}
           alt={i === 0 ? alt : ""}
           aria-hidden={i === 0 ? undefined : "true"}
           className={`cat-slideshow__frame ${i === index ? "is-active" : ""}`}

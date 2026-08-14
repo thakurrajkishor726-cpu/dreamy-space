@@ -17,8 +17,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 # Must be set before api.db / api.security are imported.
-os.environ.pop("TURSO_URL", None)
-os.environ.pop("TURSO_TOKEN", None)
+#
+# Set to empty rather than deleted: api/__init__.py fills os.environ from .env
+# with setdefault, so a deleted key would be repopulated from the real Turso
+# credentials and the suite would run against production.
+os.environ["TURSO_URL"] = ""
+os.environ["TURSO_TOKEN"] = ""
 os.environ["CATALOGUE_DB_PATH"] = str(Path(tempfile.mkdtemp()) / "test.db")
 os.environ["JWT_SECRET"] = "test-secret-not-used-anywhere-real"
 os.environ["CLOUDINARY_CLOUD_NAME"] = "testcloud"
@@ -402,3 +406,230 @@ def test_non_admin_cannot_delete_a_lead():
     lead_id = db.query_one("SELECT id FROM leads WHERE message = ?", ("not yours to delete",))["id"]
     assert client.delete(f"/api/leads/{lead_id}", headers=auth(PLAIN)).status_code == 403
     assert db.query_one("SELECT id FROM leads WHERE id = ?", (lead_id,)) is not None
+
+
+# --------------------------------------------------------------------------
+# Category showcase images + dashboard visibility
+# --------------------------------------------------------------------------
+
+
+def new_category(name):
+    response = client.post("/api/categories", json={"name": name}, headers=auth(ADMIN))
+    assert response.status_code == 201, response.text
+    return response.json()["id"]
+
+
+def test_categories_default_to_showing_on_the_dashboard():
+    category_id = new_category("Defaults Check")
+    row = next(c for c in client.get("/api/categories").json() if c["id"] == category_id)
+    assert row["show_in_dashboard"] is True
+    assert row["images"] == []
+
+
+def test_dashboard_visibility_can_be_toggled_without_resending_the_name():
+    category_id = new_category("Toggle Me")
+    response = client.patch(
+        f"/api/categories/{category_id}", json={"show_in_dashboard": False}, headers=auth(ADMIN)
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["show_in_dashboard"] is False
+    # The name must survive a body that never mentioned it.
+    assert response.json()["name"] == "Toggle Me"
+
+
+def test_renaming_leaves_dashboard_visibility_alone():
+    category_id = new_category("Rename Me")
+    client.patch(
+        f"/api/categories/{category_id}", json={"show_in_dashboard": False}, headers=auth(ADMIN)
+    )
+    renamed = client.patch(
+        f"/api/categories/{category_id}", json={"name": "Renamed"}, headers=auth(ADMIN)
+    ).json()
+    assert renamed["name"] == "Renamed"
+    assert renamed["show_in_dashboard"] is False
+
+
+def test_toggling_visibility_requires_admin():
+    category_id = new_category("Guarded")
+    assert (
+        client.patch(
+            f"/api/categories/{category_id}",
+            json={"show_in_dashboard": False},
+            headers=auth(PLAIN),
+        ).status_code
+        == 403
+    )
+
+
+def test_category_images_accept_both_local_paths_and_cloudinary_urls():
+    """The originals are local files; anything added later is a Cloudinary
+    URL. Both live in the same ordered list."""
+    category_id = new_category("Mixed Sources")
+    local = "/images/categories/TV_Unit/image.png"
+    remote = "https://res.cloudinary.com/demo/image/upload/v1/dreamyspaces/tv.jpg"
+
+    response = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": local}, {"image_url": remote}]},
+        headers=auth(ADMIN),
+    )
+    assert response.status_code == 200, response.text
+    assert [row["image_url"] for row in response.json()] == [local, remote]
+    assert [row["position"] for row in response.json()] == [0, 1]
+
+
+def test_reordering_images_keeps_their_row_ids():
+    """Delete-and-recreate would churn ids and created_at on every save."""
+    category_id = new_category("Reorder Me")
+    urls = ["/images/a.png", "/images/b.png", "/images/c.png"]
+    first = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": u} for u in urls]},
+        headers=auth(ADMIN),
+    ).json()
+    ids_by_url = {row["image_url"]: row["id"] for row in first}
+
+    reordered = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": u} for u in reversed(urls)]},
+        headers=auth(ADMIN),
+    ).json()
+
+    assert [row["image_url"] for row in reordered] == list(reversed(urls))
+    assert {row["image_url"]: row["id"] for row in reordered} == ids_by_url
+
+
+def test_replacing_images_drops_the_ones_left_out():
+    category_id = new_category("Prune Me")
+    client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": "/images/x.png"}, {"image_url": "/images/y.png"}]},
+        headers=auth(ADMIN),
+    )
+    remaining = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": "/images/y.png"}]},
+        headers=auth(ADMIN),
+    ).json()
+    assert [row["image_url"] for row in remaining] == ["/images/y.png"]
+
+
+def test_duplicate_images_are_rejected():
+    """Two identical URLs make the diff ambiguous and give the admin grid two
+    tiles it cannot tell apart."""
+    category_id = new_category("Dupe Check")
+    response = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": "/images/same.png"}, {"image_url": "/images/same.png"}]},
+        headers=auth(ADMIN),
+    )
+    assert response.status_code == 422
+
+
+def test_adding_and_deleting_a_single_image():
+    category_id = new_category("Single Ops")
+    created = client.post(
+        f"/api/categories/{category_id}/images",
+        json={"image_url": "/images/one.png"},
+        headers=auth(ADMIN),
+    )
+    assert created.status_code == 201, created.text
+    image_id = created.json()["id"]
+
+    assert len(client.get(f"/api/categories/{category_id}/images").json()) == 1
+
+    deleted = client.delete(
+        f"/api/categories/{category_id}/images/{image_id}", headers=auth(ADMIN)
+    )
+    assert deleted.status_code == 204
+    assert client.get(f"/api/categories/{category_id}/images").json() == []
+
+
+def test_an_image_cannot_be_deleted_through_a_different_category():
+    """Otherwise the category in the path is decorative and any id is fair
+    game."""
+    owner = new_category("Owner Cat")
+    other = new_category("Other Cat")
+    image_id = client.post(
+        f"/api/categories/{owner}/images",
+        json={"image_url": "/images/owned.png"},
+        headers=auth(ADMIN),
+    ).json()["id"]
+
+    assert client.delete(f"/api/categories/{other}/images/{image_id}", headers=auth(ADMIN)).status_code == 404
+    assert len(client.get(f"/api/categories/{owner}/images").json()) == 1
+
+
+def test_category_images_are_public_to_read_but_admin_to_write():
+    category_id = new_category("Perms Check")
+    assert client.get(f"/api/categories/{category_id}/images").status_code == 200
+    assert (
+        client.put(
+            f"/api/categories/{category_id}/images",
+            json={"images": [{"image_url": "/images/nope.png"}]},
+        ).status_code
+        == 401
+    )
+    assert (
+        client.put(
+            f"/api/categories/{category_id}/images",
+            json={"images": [{"image_url": "/images/nope.png"}]},
+            headers=auth(PLAIN),
+        ).status_code
+        == 403
+    )
+
+
+def test_deleting_a_category_takes_its_images_with_it():
+    category_id = new_category("Cascade Me")
+    client.post(
+        f"/api/categories/{category_id}/images",
+        json={"image_url": "/images/gone.png"},
+        headers=auth(ADMIN),
+    )
+    assert client.delete(f"/api/categories/{category_id}", headers=auth(ADMIN)).status_code == 204
+    assert db.query_one(
+        "SELECT id FROM category_images WHERE category_id = ?", (category_id,)
+    ) is None
+
+
+# --------------------------------------------------------------------------
+# Schema migration
+#
+# show_in_dashboard was added after the first release. CREATE TABLE IF NOT
+# EXISTS does nothing to a table that already exists and SQLite has no ADD
+# COLUMN IF NOT EXISTS, so without _ensure_column the flag would only ever
+# appear on a brand new database — and never on the live Turso one.
+# --------------------------------------------------------------------------
+
+
+def _probe_columns():
+    return {row["name"] for row in db.query("PRAGMA table_info(migration_probe)")}
+
+
+def test_ensure_column_adds_a_missing_column_to_an_existing_table():
+    db.execute("DROP TABLE IF EXISTS migration_probe")
+    db.execute("CREATE TABLE migration_probe (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
+    db.execute("INSERT INTO migration_probe (name) VALUES ('pre-existing row')")
+    assert "flag" not in _probe_columns()
+
+    db._ensure_column("migration_probe", "flag", "flag INTEGER NOT NULL DEFAULT 1")
+
+    assert "flag" in _probe_columns()
+    row = db.query_one("SELECT name, flag FROM migration_probe")
+    assert row["name"] == "pre-existing row", "existing data must survive the migration"
+    assert row["flag"] == 1, "existing rows must pick up the column default"
+
+    # Every boot calls this, so a second run must be a no-op rather than an error.
+    db._ensure_column("migration_probe", "flag", "flag INTEGER NOT NULL DEFAULT 1")
+    assert "flag" in _probe_columns()
+
+    db.execute("DROP TABLE migration_probe")
+
+
+def test_init_schema_is_safe_to_run_twice():
+    db.init_schema()
+    db.init_schema()
+    assert "show_in_dashboard" in {
+        row["name"] for row in db.query("PRAGMA table_info(categories)")
+    }

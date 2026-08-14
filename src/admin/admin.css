@@ -27,14 +27,15 @@
   object-fit: contain;
 }
 
+/* The sidebar is dark, so this has to be the light form of the wordmark. */
 .admin-sidebar__wordmark {
   font-family: "Fraunces", Georgia, serif;
   font-size: 1.2rem;
   font-weight: 500;
   letter-spacing: -0.015em;
-  color: #1c2b26;
+  color: #f4f1eb;
   display: inline-block;
-  border-left: 3px solid #a94b29;
+  border-left: 3px solid #c2603c;
   padding-left: 10px;
   line-height: 1.2;
 }
@@ -926,4 +927,128 @@
   .admin-lead__actions .admin-btn {
     flex: 1;
   }
+}
+
+/* ------------------------------------------------------------------
+   Categories: visibility switch + per-category image manager
+   ------------------------------------------------------------------ */
+
+.admin-cat {
+  background: #fff;
+  border: 1px solid #e6e3dd;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.admin-cat + .admin-cat {
+  margin-top: 10px;
+}
+
+.admin-cat__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  flex-wrap: wrap;
+}
+
+.admin-cat__images {
+  border-top: 1px solid #eeece8;
+  padding: 16px 18px 18px;
+  background: #fbfaf8;
+}
+
+.admin-cat__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* Switch */
+.admin-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  flex: 0 0 auto;
+}
+
+.admin-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.admin-switch__track {
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: #d5d1ca;
+  position: relative;
+  transition: background-color 0.25s ease;
+  flex: 0 0 38px;
+}
+
+.admin-switch__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s ease;
+}
+
+.admin-switch input:checked + .admin-switch__track {
+  background: #a94b29;
+}
+
+.admin-switch input:checked + .admin-switch__track .admin-switch__thumb {
+  transform: translateX(16px);
+}
+
+.admin-switch input:focus-visible + .admin-switch__track {
+  outline: 2px solid #a94b29;
+  outline-offset: 2px;
+}
+
+.admin-switch__label {
+  font-size: 0.82rem;
+  color: #56534e;
+  white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+  .admin-cat__row {
+    gap: 10px;
+  }
+  .admin-cat__row .admin-list__main {
+    flex: 1 1 100%;
+  }
+}
+
+.admin-hint {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #e3cdb0;
+  background: #fdf5e8;
+  color: #7a5c1e;
+  font-size: 0.78rem;
+  font-family: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-hint:hover {
+  background: #faedd8;
+  border-color: #d4b78e;
 }

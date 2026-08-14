@@ -6,7 +6,7 @@ import PageHeader from "../components/PageHeader";
 import { contactImage, innerBanner } from "../data/banners";
 import { api, ApiError } from "../lib/apiClient";
 import { COMPANY, addressText, mailHref, telHref, whatsappHref } from "../data/company";
-import { CATEGORY_IMAGES } from "../data/categoryImages";
+import { useCategories } from "../lib/useCategories";
 
 const EMPTY_FORM = { name: "", email: "", phone: "", service: "", message: "" };
 
@@ -16,6 +16,7 @@ export default function Contact() {
   const [successMessage, setSuccessMessage] = useState("");
   const [failureMessage, setFailureMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { categories } = useCategories();
 
   const infoCards = useMemo(
     () => [
@@ -241,8 +242,8 @@ export default function Contact() {
                       onChange={handleChange}
                     >
                       <option value="">Select an option</option>
-                      {CATEGORY_IMAGES.map((category) => (
-                        <option value={category.name} key={category.folder}>
+                      {categories.map((category) => (
+                        <option value={category.name} key={category.id}>
                           {category.name}
                         </option>
                       ))}

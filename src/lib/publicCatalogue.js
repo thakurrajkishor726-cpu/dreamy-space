@@ -1,5 +1,6 @@
 import { api } from "./apiClient";
 import { readCache, writeCache } from "./catalogueCache";
+import { loadCategoriesOnce } from "./useCategories";
 import { TESTIMONIALS } from "../data/testimonials";
 
 /**
@@ -37,10 +38,12 @@ export async function loadPublicProjects() {
   if (cached) return cached;
 
   try {
-    const [projects, categories] = await Promise.all([api.listProjects(), api.listCategories()]);
+    // Categories come from the shared loader so this does not fire a second
+    // /api/categories request alongside the one the nav and home grid share.
+    const [projects, shared] = await Promise.all([api.listProjects(), loadCategoriesOnce()]);
     const result = {
       projects: normalise(projects),
-      categories: categories.map((category) => category.name),
+      categories: shared.categories.map((category) => category.name),
       error: null,
     };
     if (result.projects.length) writeCache("projects", result);

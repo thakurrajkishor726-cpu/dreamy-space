@@ -1,4 +1,4 @@
-import { CATEGORY_IMAGES } from "../../data/categoryImages";
+import { useCategories } from "../../lib/useCategories";
 
 /**
  * Continuous band of category names under the hero.
@@ -12,9 +12,11 @@ import { CATEGORY_IMAGES } from "../../data/categoryImages";
 const MIN_ITEMS = 12;
 
 export default function CategoryMarquee() {
-  if (!CATEGORY_IMAGES.length) return null;
+  const { categories } = useCategories();
 
-  const names = CATEGORY_IMAGES.map((category) => category.name);
+  if (!categories.length) return null;
+
+  const names = categories.map((category) => category.name);
   const items = Array.from({ length: Math.max(MIN_ITEMS, names.length) }, (_, i) => ({
     key: i,
     name: names[i % names.length],

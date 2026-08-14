@@ -33,7 +33,7 @@ export default function WhyUs() {
     <section className="why section-padding">
       <div className="container why__grid">
         <div className="why__aside">
-          <span className="ds-eyebrow ds-eyebrow--light">Why Dreamy Spaces</span>
+          <span className="ds-eyebrow ds-eyebrow--light">Why Dreamy Space</span>
           <h2 className="ds-title ds-title--light">
             How the job is <em>actually run</em>
           </h2>

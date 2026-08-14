@@ -105,6 +105,19 @@ def touch(table: str, row_id: int) -> None:
     )
 
 
+def _ensure_column(table: str, column: str, definition: str) -> None:
+    """Add a column to an existing table if it isn't there yet.
+
+    CREATE TABLE IF NOT EXISTS silently does nothing when the table already
+    exists, and SQLite has no ADD COLUMN IF NOT EXISTS — so a column added
+    after the first release needs this, or it only ever appears on a fresh
+    database.
+    """
+    existing = {row["name"] for row in query(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        execute(f"ALTER TABLE {table} ADD COLUMN {definition}")
+
+
 def init_schema() -> None:
     """Create tables if they don't exist. Safe to call on every boot."""
     conn = connect()
@@ -112,3 +125,8 @@ def init_schema() -> None:
     for statement in filter(None, (part.strip() for part in sql.split(";"))):
         conn.execute(statement)
     conn.commit()
+
+    # Columns introduced after the initial schema shipped.
+    _ensure_column(
+        "categories", "show_in_dashboard", "show_in_dashboard INTEGER NOT NULL DEFAULT 1"
+    )

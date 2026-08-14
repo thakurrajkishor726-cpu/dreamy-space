@@ -1,4 +1,4 @@
-"""Dreamy Spaces catalogue API.
+"""Dreamy Space catalogue API.
 
 Everything the admin and the public site need: auth, categories, projects
 (with per-category image sets) and Cloudinary upload signing. Data lives in
@@ -33,7 +33,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="Dreamy Spaces catalogue API",
+    title="Dreamy Space catalogue API",
     docs_url="/api/docs",
     redoc_url=None,
     lifespan=lifespan,

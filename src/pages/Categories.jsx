@@ -3,20 +3,30 @@ import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import PageHeader from "../components/PageHeader";
 import { innerBanner } from "../data/banners";
-import { CATEGORY_IMAGES } from "../data/categoryImages";
+import { useCategories } from "../lib/useCategories";
+import { cloudinaryUrl } from "../lib/cloudinary";
 
 /**
- * Standalone showcase, separate from the project portfolio. These images ship
- * with the frontend under public/images/categories/<Folder_Name>/ and are
- * served from that path directly — no CDN, no database. The manifest is
- * generated at build time because a browser can't list a directory.
+ * Standalone showcase, separate from the project portfolio.
+ *
+ * Images come from the category_images table. The originals are local paths
+ * under public/images/categories/ and anything added through the admin since
+ * is a Cloudinary URL; cloudinaryUrl() resizes the latter and leaves the
+ * former alone, so both render from the same list.
  */
 export default function Categories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [active, setActive] = useState("All");
   const [lightbox, setLightbox] = useState(null);
+  const { categories, settled } = useCategories();
 
-  const names = useMemo(() => ["All", ...CATEGORY_IMAGES.map((c) => c.name)], []);
+  // Every category is listed here regardless of show_in_dashboard — that flag
+  // only governs the home page grid.
+  const withImages = useMemo(
+    () => categories.filter((category) => category.images.length > 0),
+    [categories],
+  );
+  const names = useMemo(() => ["All", ...withImages.map((c) => c.name)], [withImages]);
 
   // Cards on the home page deep-link here with ?category=…
   useEffect(() => {
@@ -34,9 +44,9 @@ export default function Categories() {
   const shown = useMemo(
     () =>
       active === "All"
-        ? CATEGORY_IMAGES
-        : CATEGORY_IMAGES.filter((category) => category.name === active),
-    [active],
+        ? withImages
+        : withImages.filter((category) => category.name === active),
+    [active, withImages],
   );
 
   const flat = useMemo(
@@ -73,7 +83,7 @@ export default function Categories() {
           </div>
 
           {shown.map((category) => (
-            <div className="mb-5" key={category.name}>
+            <div className="mb-5" key={category.id}>
               {active === "All" && (
                 <h2 className="ds-title h3 mb-4">{category.name}</h2>
               )}
@@ -94,7 +104,12 @@ export default function Categories() {
                         setLightbox(flat.findIndex((item) => item.src === src))
                       }
                     >
-                      <img src={src} alt={category.name} loading="lazy" className="cover-image" />
+                      <img
+                        src={cloudinaryUrl(src, { width: 600, height: 450 })}
+                        alt={category.name}
+                        loading="lazy"
+                        className="cover-image"
+                      />
                     </motion.div>
                   </div>
                 ))}
@@ -102,11 +117,9 @@ export default function Categories() {
             </div>
           ))}
 
-          {CATEGORY_IMAGES.length === 0 && (
+          {settled && withImages.length === 0 && (
             <p className="text-brand-muted text-center mb-0">
-              No category images found. Add folders under{" "}
-              <code>public/images/categories/</code> and run{" "}
-              <code>npm run categories:manifest</code>.
+              No category images yet. Add them under Categories in the admin.
             </p>
           )}
         </div>
@@ -159,7 +172,7 @@ export default function Categories() {
               key={flat[lightbox].src}
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              src={flat[lightbox].src}
+              src={cloudinaryUrl(flat[lightbox].src, { width: 1600, crop: "limit" })}
               alt={flat[lightbox].category}
               className="img-fluid"
               style={{ maxHeight: "85vh", objectFit: "contain" }}

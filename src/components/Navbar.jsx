@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { FiChevronDown, FiClock, FiMail, FiPhone } from "react-icons/fi";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { COMPANY, mailHref, telHref } from "../data/company";
-import { CATEGORY_IMAGES } from "../data/categoryImages";
+import { useCategories } from "../lib/useCategories";
 import Wordmark from "./Wordmark";
 
 const EXPAND_AT = 1200;
@@ -32,14 +32,16 @@ export default function Navbar() {
   const location = useLocation();
   const headerRef = useRef(null);
 
+  const { categories } = useCategories();
+
   const services = useMemo(
     () =>
-      CATEGORY_IMAGES.map((category) => ({
+      categories.map((category) => ({
         name: category.name,
         thumb: category.images[0],
         to: `/our-work?category=${encodeURIComponent(category.name)}`,
       })),
-    [],
+    [categories],
   );
 
   const socials = useMemo(
@@ -71,8 +73,12 @@ export default function Navbar() {
     if (!node) return undefined;
 
     const sync = () => {
-      const height = Math.round(node.getBoundingClientRect().height);
-      if (height) document.documentElement.style.setProperty("--header-height", `${height}px`);
+      // Not rounded: the panel is pinned to exactly this value, so half a
+      // pixel of rounding shows up as a hairline gap or overlap under the bar.
+      const height = node.getBoundingClientRect().height;
+      if (height) {
+        document.documentElement.style.setProperty("--header-height", `${height.toFixed(2)}px`);
+      }
     };
 
     sync();

@@ -7,7 +7,6 @@ import { cloudinaryUrl } from "../lib/cloudinary";
 
 export default function Testimonials() {
   const [testimonials, setTestimonials] = useState(null);
-  const [error, setError] = useState(null);
   const [status, setStatus] = useState("idle");
   const fetchedRef = useRef(false);
 
@@ -17,10 +16,10 @@ export default function Testimonials() {
     setStatus("loading");
     loadTestimonials().then((result) => {
       setTestimonials(result.testimonials);
-      if (result.error) {
-        console.error("Testimonials error:", result.error);
-        setError("Unable to load testimonials");
-      }
+      // Failures are logged, not shown: a visitor can do nothing with
+      // "live data unavailable", and the page already falls back to what it
+      // has.
+      if (result.error) console.error("Testimonials error:", result.error);
       setStatus("success");
     });
   }, []);
@@ -37,11 +36,6 @@ export default function Testimonials() {
 
       <section className="section-padding">
         <div className="container">
-          {error && (
-            <p className="text-warning small mb-3">
-              ⚠️ Some content may be outdated. Please try again later.
-            </p>
-          )}
           {status === "loading" && (
             <p className="text-brand-muted small mb-3">Loading testimonials...</p>
           )}

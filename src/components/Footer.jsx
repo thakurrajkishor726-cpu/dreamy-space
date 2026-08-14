@@ -7,7 +7,7 @@ import {
 } from "react-icons/fa";
 import { FiClock, FiMail, FiMapPin, FiPhone } from "react-icons/fi";
 import { COMPANY, addressText, mailHref, telHref } from "../data/company";
-import { CATEGORY_IMAGES } from "../data/categoryImages";
+import { useCategories } from "../lib/useCategories";
 import Wordmark from "./Wordmark";
 
 const QUICK_LINKS = [
@@ -34,8 +34,10 @@ export default function Footer() {
     [],
   );
 
+  const { categories } = useCategories();
+
   // Four is enough to show the range without turning the footer into a menu.
-  const services = useMemo(() => CATEGORY_IMAGES.slice(0, 4), []);
+  const services = useMemo(() => categories.slice(0, 4), [categories]);
 
   return (
     <footer className="ds-footer">
@@ -85,7 +87,7 @@ export default function Footer() {
                 </h2>
                 <ul className="ds-footer__links">
                   {services.map((service) => (
-                    <li key={service.folder}>
+                    <li key={service.id}>
                       <Link
                         className="ds-footer__link"
                         to={`/our-work?category=${encodeURIComponent(service.name)}`}

@@ -5,7 +5,7 @@ import stockU02 from "../../assets/images/stock/u02.jpg";
 /**
  * This block used to carry "100+ Design Awards" and "1000+ Happy Clients".
  * Both came from the site this project was modelled on and neither is a claim
- * Dreamy Spaces can support, so they are gone. What is here instead describes
+ * Dreamy Space can support, so they are gone. What is here instead describes
  * how the work is done, which is true on day one.
  */
 

@@ -1,5 +1,5 @@
 /**
- * Dreamy Spaces wordmark.
+ * Dreamy Space wordmark.
  *
  * The build was still shipping the logo of the studio this project was
  * modelled on — their mark, in the header, the footer and the admin. This
@@ -37,7 +37,7 @@ export default function Wordmark({ tone = "dark", showTag = true, className = ""
       </svg>
 
       <span className="ds-wordmark__text">
-        <span className="ds-wordmark__name">Dreamy Spaces</span>
+        <span className="ds-wordmark__name">Dreamy Space</span>
         {showTag && <span className="ds-wordmark__tag">Interiors · Bengaluru</span>}
       </span>
     </span>

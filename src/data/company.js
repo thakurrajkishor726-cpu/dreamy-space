@@ -7,7 +7,7 @@
  */
 
 export const COMPANY = {
-  name: "Dreamy Spaces",
+  name: "Dreamy Space",
 
   email: "thakurrajkishor726@gmail.com",
 

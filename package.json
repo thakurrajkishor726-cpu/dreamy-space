@@ -11,7 +11,7 @@
     "categories:manifest": "node scripts/generate-category-manifest.mjs",
     "predev": "node scripts/generate-category-manifest.mjs",
     "prebuild": "node scripts/generate-category-manifest.mjs",
-    "api": ".venv/bin/uvicorn server.main:app --port 8000 --reload",
+    "api": ".venv/bin/uvicorn server.main:app --port ${API_PORT:-8000} --reload",
     "check:env": "python3 scripts/check_env.py"
   },
   "dependencies": {

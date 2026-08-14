@@ -6,10 +6,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Lets the admin call /api/sign-upload in dev exactly as it does in
-      // production. Run the signer with: uvicorn api.index:app --port 8000
+      // Lets the frontend call /api/* in dev exactly as it does in production,
+      // where vercel.json rewrites those to the Python function.
+      //
+      //   npm run api      # uvicorn server.main:app --port 8000
+      //
+      // API_PORT overrides both sides when 8000 is taken — which on WSL can
+      // outlive the process that held it.
       "/api": {
-        target: "http://127.0.0.1:8000",
+        target: `http://127.0.0.1:${process.env.API_PORT || 8000}`,
         changeOrigin: true,
       },
     },

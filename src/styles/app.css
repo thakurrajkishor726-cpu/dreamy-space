@@ -2248,15 +2248,103 @@ a.ds-topbar__item:focus-visible {
   opacity: 1;
 }
 
+/* ---------------------------------------------------------------------
+   Projects grid
+
+   Six columns, three cards across. The spans are nth-child rules so the
+   layout follows however many projects are published, with no count passed
+   in from JavaScript:
+
+     1 project        one wide feature, copy beside the photo
+     2 projects       half each
+     last row of 1    spreads full width
+     last row of 2    half each
+
+   Otherwise a single published job sat as one narrow card in an empty
+   four-across row, which reads as a broken page rather than a young studio.
+   --------------------------------------------------------------------- */
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+}
+
 .project-card {
   display: flex;
   flex-direction: column;
+  grid-column: span 6;
   background: transparent;
   border: 0;
   cursor: pointer;
   height: 100%;
   border-radius: var(--r-lg);
   transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Two across. Bounded at the top: :last-child:nth-child(odd) is (0,3,0) and
+   would otherwise outrank the three-across base rule below, since a media
+   query adds no specificity. */
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .project-card {
+    grid-column: span 3;
+  }
+
+  .project-card:last-child:nth-child(odd) {
+    grid-column: span 6;
+  }
+}
+
+@media (min-width: 992px) {
+  .project-card {
+    grid-column: span 2;
+  }
+
+  /* Last row holds a single card. */
+  .project-card:last-child:nth-child(3n + 1) {
+    grid-column: span 6;
+  }
+
+  /* Last row holds two. */
+  .project-card:nth-child(3n + 1):nth-last-child(2),
+  .project-card:nth-child(3n + 1):nth-last-child(2) ~ .project-card {
+    grid-column: span 3;
+  }
+
+  /* Exactly two published. */
+  .project-card:first-child:nth-last-child(2),
+  .project-card:first-child:nth-last-child(2) ~ .project-card {
+    grid-column: span 3;
+  }
+}
+
+/* A lone project becomes a feature: photo one side, copy the other. */
+@media (min-width: 768px) {
+  .project-card:only-child {
+    grid-column: span 6;
+    flex-direction: row;
+    align-items: stretch;
+    gap: clamp(1.75rem, 4vw, 3.5rem);
+  }
+
+  .project-card:only-child .project-card__media {
+    flex: 1 1 58%;
+    aspect-ratio: 16 / 11;
+  }
+
+  .project-card:only-child .project-card__body {
+    flex: 1 1 42%;
+    align-content: center;
+    padding: 0;
+  }
+
+  .project-card:only-child .project-card__title {
+    font-size: clamp(1.7rem, 3vw, 2.5rem);
+  }
+
+  .project-card:only-child .project-card__location {
+    font-size: 1rem;
+  }
 }
 
 .project-card:hover,
@@ -2311,6 +2399,24 @@ a.ds-topbar__item:focus-visible {
 
 .project-card:hover .project-card__scrim {
   opacity: 1;
+}
+
+/* Carries its own backing rather than relying on a text shadow: a cover can
+   be a bright, near-white photo, and plain white numerals vanish on it. */
+.project-card__index {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.85rem;
+  z-index: 2;
+  font-family: var(--ds-font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: #fff;
+  background: rgba(19, 30, 26, 0.55);
+  backdrop-filter: blur(6px);
+  border-radius: var(--r-pill);
+  padding: 0.22rem 0.6rem;
+  line-height: 1.4;
 }
 
 .project-card__count {

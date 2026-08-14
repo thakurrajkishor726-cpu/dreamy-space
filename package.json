@@ -1,0 +1,34 @@
+{
+  "name": "dreamyspaces",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "categories:manifest": "node scripts/generate-category-manifest.mjs",
+    "predev": "node scripts/generate-category-manifest.mjs",
+    "prebuild": "node scripts/generate-category-manifest.mjs",
+    "api": "uvicorn api.index:app --port 8000 --reload",
+    "check:env": "python3 scripts/check_env.py"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "framer-motion": "^13.0.0",
+    "gsap": "^3.15.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-icons": "^5.7.0",
+    "react-router-dom": "^7.18.2",
+    "swiper": "^14.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "oxlint": "^1.75.0",
+    "vite": "^8.2.0"
+  }
+}

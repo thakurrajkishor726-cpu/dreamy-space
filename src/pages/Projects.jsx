@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { FiArrowUpRight, FiMapPin } from "react-icons/fi";
 import PageHeader from "../components/PageHeader";
 import { innerBanner } from "../data/banners";
 import { loadPublicProjects } from "../lib/publicCatalogue";
-import { cloudinarySrcSet, cloudinaryUrl } from "../lib/cloudinary";
+import { cloudinaryUrl } from "../lib/cloudinary";
+import ProjectCard from "../components/ProjectCard";
 
 function Lightbox({ isOpen, items = [], currentIndex = 0, onClose, onPrev, onNext }) {
   const [zoomed, setZoomed] = useState(false);
@@ -125,81 +125,6 @@ function Lightbox({ isOpen, items = [], currentIndex = 0, onClose, onPrev, onNex
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-/**
- * The project's own name and location lead; categories are secondary, and all
- * of them are listed rather than just the first.
- *
- * Column spans are nth-child rules in the stylesheet, so the grid adapts to
- * however many projects are published — a single job becomes a wide feature
- * with the copy beside it rather than one narrow card marooned in an empty
- * row, and a part-filled last row spreads to fill instead of trailing off.
- */
-function ProjectCard({ project, index, onClick, isTarget }) {
-  const cover = project.images[0];
-  const extra = project.images.length - 1;
-
-  return (
-    <motion.article
-      layout
-      id={`project-${project.id}`}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.5 }}
-      className={`project-card ${isTarget ? "is-target" : ""}`}
-      role="button"
-      tabIndex={0}
-      aria-label={`${project.title}${project.location ? `, ${project.location}` : ""} — view photos`}
-      onClick={onClick}
-      onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onClick?.()}
-    >
-      <div className="project-card__media">
-        {cover ? (
-          <img
-            src={cloudinaryUrl(cover.url, { width: 900, height: 700 })}
-            srcSet={cloudinarySrcSet(cover.url, [450, 900, 1400])}
-            sizes="(max-width: 576px) 92vw, (max-width: 992px) 46vw, 30vw"
-            className="cover-image"
-            alt={project.title}
-            loading="lazy"
-          />
-        ) : (
-          <div className="project-card__placeholder">No photos yet</div>
-        )}
-
-        <span className="project-card__scrim" aria-hidden="true" />
-        <span className="project-card__index">{String(index + 1).padStart(2, "0")}</span>
-
-        {extra > 0 && (
-          <span className="project-card__count">
-            +{extra} photo{extra === 1 ? "" : "s"}
-          </span>
-        )}
-
-        <span className="project-card__go" aria-hidden="true">
-          <FiArrowUpRight />
-        </span>
-      </div>
-
-      <div className="project-card__body">
-        <h3 className="project-card__title">{project.title}</h3>
-
-        {project.location && (
-          <p className="project-card__location">
-            <FiMapPin aria-hidden="true" />
-            {project.location}
-          </p>
-        )}
-
-        {project.categories.length > 0 && (
-          <p className="project-card__tags">{project.categories.join(" · ")}</p>
-        )}
-      </div>
-    </motion.article>
   );
 }
 

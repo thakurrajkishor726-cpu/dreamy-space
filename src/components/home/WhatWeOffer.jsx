@@ -13,10 +13,10 @@ import CategorySlideshow from "./CategorySlideshow";
  * The grid runs 7/5 and 5/7 across twelve columns so the rows alternate rather
  * than reading as an even three-across block, and the caption sits over the
  * image instead of in a panel beneath it.
+ *
+ * Column spans are pure CSS (nth-child), not computed here, so adding or
+ * removing a category can never leave the layout and the data disagreeing.
  */
-
-// Column spans for the first four tiles, then it repeats: 7,5 / 5,7.
-const isWide = (index) => index % 4 === 0 || index % 4 === 3;
 
 export default function WhatWeOffer() {
   const rootRef = useRef(null);
@@ -96,7 +96,7 @@ export default function WhatWeOffer() {
         <div className="work__grid">
           {shown.map((category, index) => (
             <article
-              className={`work__tile ${isWide(index) ? "work__tile--wide" : ""}`}
+              className="work__tile"
               key={category.id}
               ref={(node) => {
                 tilesRef.current[index] = node;

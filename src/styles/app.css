@@ -1315,7 +1315,8 @@ a.ds-topbar__item:focus-visible {
 
 .work__tile {
   position: relative;
-  grid-column: span 5;
+  /* Mobile-first: one per row. Wider layouts override below. */
+  grid-column: span 12;
   border-radius: var(--r-lg);
   overflow: hidden;
   background: var(--ds-canvas-soft);
@@ -1323,12 +1324,48 @@ a.ds-topbar__item:focus-visible {
   transition: box-shadow 0.5s ease;
 }
 
-.work__tile--wide {
-  grid-column: span 7;
-}
-
 .work__tile:hover {
   box-shadow: var(--sh-lg);
+}
+
+/* ---------------------------------------------------------------------
+   Column spans adapt to however many categories exist.
+
+   Nothing here counts tiles in JavaScript: the spans are nth-child rules, so
+   adding or removing a category can never leave the layout and the data
+   disagreeing, and any count from 1 upward lands on full rows.
+
+   The odd-count rule leans on specificity — .work__tile:last-child:nth-child(odd)
+   is (0,3,0) and beats the (0,2,0) pattern rules whatever the source order.
+   :nth-child(odd) on the last tile is true exactly when the total is odd.
+   --------------------------------------------------------------------- */
+
+/* Two up. An odd total leaves the last tile without a partner, so it spreads. */
+@media (min-width: 576px) {
+  .work__tile {
+    grid-column: span 6;
+  }
+
+  .work__tile:last-child:nth-child(odd) {
+    grid-column: span 12;
+  }
+}
+
+/* Editorial rhythm: 7/5 then 5/7, repeating every four tiles. */
+@media (min-width: 992px) {
+  .work__tile:nth-child(4n + 1),
+  .work__tile:nth-child(4n) {
+    grid-column: span 7;
+  }
+
+  .work__tile:nth-child(4n + 2),
+  .work__tile:nth-child(4n + 3) {
+    grid-column: span 5;
+  }
+
+  .work__tile:last-child:nth-child(odd) {
+    grid-column: span 12;
+  }
 }
 
 /* Oversized so the scroll-scrubbed drift never exposes the tile behind it.
@@ -1425,23 +1462,16 @@ a.ds-topbar__item:focus-visible {
   z-index: 4;
 }
 
+/* Row heights only — the spans live in the mobile-first block above. */
 @media (max-width: 991.98px) {
   .work__grid {
     grid-auto-rows: 300px;
-  }
-  .work__tile,
-  .work__tile--wide {
-    grid-column: span 6;
   }
 }
 
 @media (max-width: 575.98px) {
   .work__grid {
     grid-auto-rows: 260px;
-  }
-  .work__tile,
-  .work__tile--wide {
-    grid-column: span 12;
   }
 }
 

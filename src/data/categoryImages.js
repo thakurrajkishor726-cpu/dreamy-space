@@ -3,6 +3,17 @@
 
 export const CATEGORY_IMAGES = [
   {
+    "name": "Crockery",
+    "folder": "Crockery",
+    "images": [
+      "/images/categories/Crockery/image%20copy%202.png",
+      "/images/categories/Crockery/image%20copy%203.png",
+      "/images/categories/Crockery/image%20copy%204.png",
+      "/images/categories/Crockery/image%20copy.png",
+      "/images/categories/Crockery/image.png"
+    ]
+  },
+  {
     "name": "Ftc Sliding Wardrobe",
     "folder": "Ftc_Sliding_Wardrobe",
     "images": [
@@ -28,6 +39,18 @@ export const CATEGORY_IMAGES = [
     ]
   },
   {
+    "name": "Kitchen",
+    "folder": "Kitchen",
+    "images": [
+      "/images/categories/Kitchen/image%20copy%202.png",
+      "/images/categories/Kitchen/image%20copy%203.png",
+      "/images/categories/Kitchen/image%20copy%204.png",
+      "/images/categories/Kitchen/image%20copy%205.png",
+      "/images/categories/Kitchen/image%20copy.png",
+      "/images/categories/Kitchen/image.png"
+    ]
+  },
+  {
     "name": "Openbale Wardrobe",
     "folder": "Openbale_Wardrobe",
     "images": [
@@ -39,6 +62,18 @@ export const CATEGORY_IMAGES = [
       "/images/categories/Openbale_Wardrobe/image%20copy%207.png",
       "/images/categories/Openbale_Wardrobe/image%20copy.png",
       "/images/categories/Openbale_Wardrobe/image.png"
+    ]
+  },
+  {
+    "name": "Poojs",
+    "folder": "Poojs",
+    "images": [
+      "/images/categories/Poojs/image%20copy%202.png",
+      "/images/categories/Poojs/image%20copy%203.png",
+      "/images/categories/Poojs/image%20copy%204.png",
+      "/images/categories/Poojs/image%20copy%205.png",
+      "/images/categories/Poojs/image%20copy.png",
+      "/images/categories/Poojs/image.png"
     ]
   },
   {

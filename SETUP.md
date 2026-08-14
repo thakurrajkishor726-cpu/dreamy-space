@@ -78,10 +78,12 @@ Then **http://localhost:5173/admin**.
 
 ```
 users                     name, email, password (bcrypt), is_admin
-categories                name
+categories                name, show_in_dashboard
+category_images           category_id, image_url, position
 projects                  name, location
 project_categories        project_id, category_id
 project_category_images   project_categories_id, image_url, position
+leads                     name, email, phone, service, message, handled
 ```
 
 Every table also has `id`, `created_at`, `updated_at`.
@@ -115,6 +117,31 @@ Cloudinary.
 everything else to the SPA — one repo, one deploy. Set every server-side
 variable from `.env.example` in *Project Settings → Environment Variables*, and
 put your production URL in `ALLOWED_ORIGINS`.
+
+### Why the app lives in `server/`, not `api/`
+
+Vercel builds **every `.py` file under `api/` as its own serverless function**,
+and it loads that file as a top-level module rather than as part of a package.
+With the whole app in `api/`, that broke twice over: `api/index.py` failed on
+`from . import db` with *"attempted relative import with no known parent
+package"*, and `db.py`, `security.py` and each router were separately built as
+functions that export no handler.
+
+So the FastAPI app is an ordinary package at `server/`, and `api/index.py` is
+the only file under `api/` — three lines that re-export the ASGI app.
+`vercel.json` bundles the package next to it:
+
+```json
+"functions": {
+  "api/index.py": { "includeFiles": "server/**" }
+}
+```
+
+`includeFiles` is not optional: `server/` is outside the function directory, so
+without it neither the package nor `schema.sql` (read at runtime) ships.
+
+Everything imported at module scope must be in `requirements.txt` or the
+function crashes on cold start and every route returns 500.
 
 ## Things worth knowing
 

@@ -1,4 +1,4 @@
-"""Dreamy Space API package.
+"""Dreamy Space API package (the FastAPI app).
 
 Loads .env before anything else imports, because db.py, security.py and
 uploads.py all read os.environ at module scope.

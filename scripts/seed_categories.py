@@ -21,7 +21,7 @@ from urllib.parse import quote
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from api import db  # noqa: E402
+from server import db  # noqa: E402
 
 FOLDER = Path(__file__).resolve().parents[1] / "public" / "images" / "categories"
 IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif"}

@@ -16,9 +16,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-# Must be set before api.db / api.security are imported.
+# Must be set before server.db / server.security are imported.
 #
-# Set to empty rather than deleted: api/__init__.py fills os.environ from .env
+# Set to empty rather than deleted: server/__init__.py fills os.environ from .env
 # with setdefault, so a deleted key would be repopulated from the real Turso
 # credentials and the suite would run against production.
 os.environ["TURSO_URL"] = ""
@@ -31,9 +31,9 @@ os.environ["CLOUDINARY_API_SECRET"] = "testsecret"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from api import db  # noqa: E402
-from api.index import app  # noqa: E402
-from api.security import hash_password  # noqa: E402
+from server import db  # noqa: E402
+from server.main import app  # noqa: E402
+from server.security import hash_password  # noqa: E402
 
 client = TestClient(app)
 

@@ -1,5 +1,16 @@
+# Runtime dependencies for the API (api/index.py), installed by Vercel from
+# this file. Everything imported at module scope must be listed here or the
+# function crashes on cold start and every /api route returns 500.
 fastapi==0.120.4
-pydantic==2.12.3
+pydantic[email]==2.12.3
 httpx==0.28.1
 PyJWT[crypto]==2.10.1
+
+# Turso client. api/db.py imports this at import time.
+libsql==0.1.11
+
+# Password hashing. api/security.py imports this at import time.
+bcrypt==5.0.0
+
+# Local development only — Vercel runs the ASGI app directly, without uvicorn.
 uvicorn[standard]==0.38.0

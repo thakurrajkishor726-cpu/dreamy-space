@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { FiChevronDown, FiClock, FiMail, FiPhone } from "react-icons/fi";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
-import { COMPANY, mailHref, telHref } from "../data/company";
+import { COMPANY, mailHref, phone, telHref } from "../data/company";
 import { useCategories } from "../lib/useCategories";
 import Wordmark from "./Wordmark";
 
@@ -123,7 +123,7 @@ export default function Navbar() {
         <div className="container ds-topbar__inner">
           <a className="ds-topbar__item" href={telHref}>
             <FiPhone aria-hidden="true" />
-            {COMPANY.phone}
+            {phone}
           </a>
           <a className="ds-topbar__item ds-topbar__item--mail" href={mailHref}>
             <FiMail aria-hidden="true" />

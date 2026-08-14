@@ -177,7 +177,6 @@ export default function Projects() {
   const [visibleCount, setVisibleCount] = useState(12);
   const [projects, setProjects] = useState(null);
   const [allCategories, setAllCategories] = useState([]);
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const fetchedRef = useRef(false);
 
@@ -188,7 +187,9 @@ export default function Projects() {
     loadPublicProjects().then((result) => {
       setProjects(result.projects);
       setAllCategories(result.categories);
-      if (result.error) setError(result.error);
+      // Logged, not surfaced: a visitor can do nothing about it and the page
+      // already renders whatever it managed to load.
+      if (result.error) console.error("Projects load failed:", result.error);
       setLoading(false);
     });
   }, []);
@@ -238,12 +239,11 @@ export default function Projects() {
   return (
     <div className="bg-white min-vh-100">
       <PageHeader
-        title="Portfolio"
+        title="Recent"
+        accent="Projects"
+        subtitle="Portfolio"
+        description="Jobs we have finished around Bengaluru. Tap any card to page through the photos."
         image={innerBanner}
-        imagePosition="center center"
-        overlay
-        showSubtitle={false}
-        showDescription={false}
       />
 
       <section className="section-padding">
@@ -259,20 +259,13 @@ export default function Projects() {
             </div>
           ) : (
             <>
-              {error && (
-                <p className="text-warning small mb-3">
-                  ⚠️ Showing cached projects. Live data unavailable.
-                </p>
-              )}
-
-              <div className="d-flex flex-wrap justify-content-center gap-2 mb-4">
+              <div className="ds-filters">
                 {categories.map((category) => (
                   <button
                     key={category}
+                    type="button"
                     onClick={() => setActiveCategory(category)}
-                    className={`btn ${
-                      activeCategory === category ? "btn-brand text-white" : "btn-outline-brand"
-                    } text-uppercase small px-3`}
+                    className={`ds-filter ${activeCategory === category ? "is-active" : ""}`}
                   >
                     {category}
                   </button>
@@ -301,29 +294,31 @@ export default function Projects() {
 
               {visible.length === 0 && (
                 <div className="py-5 text-center">
-                  <p className="font-serif text-brand-muted h4 mb-3">
+                  <p className="font-serif text-brand-muted h4 mb-4">
                     {(projects?.length ?? 0) === 0
-                      ? "No projects available."
-                      : "No projects found in this category."}
+                      ? "No projects published yet."
+                      : "Nothing in this category yet."}
                   </p>
                   {(projects?.length ?? 0) > 0 && (
                     <button
+                      type="button"
                       onClick={() => setActiveCategory("All")}
-                      className="btn btn-outline-brand"
+                      className="btn-ghost"
                     >
-                      View All Projects
+                      View all projects
                     </button>
                   )}
                 </div>
               )}
 
               {visible.length < filtered.length && (
-                <div className="text-center mt-4">
+                <div className="text-center mt-5">
                   <button
-                    className="btn btn-outline-brand"
+                    type="button"
+                    className="btn-ghost"
                     onClick={() => setVisibleCount((count) => Math.min(count + 12, filtered.length))}
                   >
-                    Show More
+                    Show more
                   </button>
                 </div>
               )}

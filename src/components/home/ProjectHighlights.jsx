@@ -21,48 +21,60 @@ export default function ProjectHighlights() {
   if (projects.length === 0) return null;
 
   return (
-    <section className="section-padding project-hero">
+    <section className="section-padding bg-brand-light">
       <div className="container">
-        <div className="d-flex flex-column gap-3 justify-content-center align-items-center mb-4">
-          <span className="section-heading d-block">Our Project</span>
-          <h2 className="display-5 fw-semibold font-serif text-brand mb-0">
-            Recent work around Bengaluru
-          </h2>
-        </div>
+        <header className="ds-head ds-head--split">
+          <div className="ds-head__title-block">
+            <span className="ds-eyebrow">Recent work</span>
+            <h2 className="ds-title">
+              Finished jobs, <em>around Bengaluru</em>
+            </h2>
+          </div>
+          <p className="ds-lead">
+            A few of the rooms we have handed back lately. The full portfolio has the rest.
+          </p>
+        </header>
 
-        <div className="project-hero__grid">
+        <div className="row g-4">
           {projects.map((project, index) => {
             const cover = project.images[0];
             return (
-              <motion.article
-                className="project-hero__card"
-                key={project.id}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.8, delay: index * 0.12 }}
-              >
-                <div className="project-hero__image">
-                  {cover && (
-                    <img
-                      src={cloudinaryUrl(cover.url, { width: 600, height: 600 })}
-                      alt={project.title}
-                      loading="lazy"
-                    />
-                  )}
-                </div>
-                <div className="project-hero__body">
-                  <h5 className="project-hero__title">{project.title}</h5>
-                  <p className="project-hero__meta text-uppercase small mb-2">
-                    {[project.categories[0], project.location].filter(Boolean).join(" · ")}
-                  </p>
-                  <Link to="/projects" className="project-hero__link">
-                    Explore More →
+              <div className="col-12 col-md-6 col-lg-4" key={project.id}>
+                <motion.article
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{ duration: 0.65, delay: index * 0.1 }}
+                  className="project-card card-lift"
+                >
+                  <Link to="/projects" aria-label={project.title}>
+                    <div className="project-card__media mb-3">
+                      {cover && (
+                        <img
+                          src={cloudinaryUrl(cover.url, { width: 800, height: 600 })}
+                          alt={project.title}
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
+                    <h3 className="h5 mb-1">{project.title}</h3>
+                    <p className="info-subheading mb-0">
+                      {[project.categories[0], project.location].filter(Boolean).join(" · ")}
+                    </p>
                   </Link>
-                </div>
-              </motion.article>
+                </motion.article>
+              </div>
             );
           })}
+        </div>
+
+        <div className="text-center mt-5">
+          <Link className="ds-link" to="/projects">
+            See the full portfolio
+            <span className="ds-link__arrow" aria-hidden="true">
+              →
+            </span>
+          </Link>
         </div>
       </div>
     </section>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { cloudinaryUrl } from "../../lib/cloudinary";
 
 const INTERVAL_MS = 3800;
 
@@ -13,7 +14,7 @@ const INTERVAL_MS = 3800;
  * slideshows of large photos is real work, and none of it is worth doing for
  * a card nobody is looking at.
  */
-export default function CategorySlideshow({ images, alt, startDelayMs = 0 }) {
+export default function CategorySlideshow({ images, alt, startDelayMs = 0, showDots = true }) {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(false);
   const rootRef = useRef(null);
@@ -60,7 +61,8 @@ export default function CategorySlideshow({ images, alt, startDelayMs = 0 }) {
       {images.map((src, i) => (
         <img
           key={src}
-          src={src}
+          // Local originals pass through; Cloudinary uploads get resized.
+          src={cloudinaryUrl(src, { width: 900, height: 700 })}
           alt={i === 0 ? alt : ""}
           aria-hidden={i === 0 ? undefined : "true"}
           className={`cat-slideshow__frame ${i === index ? "is-active" : ""}`}
@@ -72,7 +74,7 @@ export default function CategorySlideshow({ images, alt, startDelayMs = 0 }) {
         />
       ))}
 
-      {images.length > 1 && (
+      {showDots && images.length > 1 && (
         <div className="cat-slideshow__dots" aria-hidden="true">
           {images.map((src, i) => (
             <span key={src} className={i === index ? "is-active" : ""} />

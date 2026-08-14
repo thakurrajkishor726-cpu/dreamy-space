@@ -12,8 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from api import db  # noqa: E402
-from api.security import hash_password  # noqa: E402
+from server import db  # noqa: E402
+from server.security import hash_password  # noqa: E402
 
 
 def main() -> None:

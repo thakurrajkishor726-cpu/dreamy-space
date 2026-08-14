@@ -101,8 +101,18 @@ export const api = {
 
   listCategories: () => get("/api/categories"),
   createCategory: (name) => authed("/api/categories", "POST", { name }),
-  updateCategory: (id, name) => authed(`/api/categories/${id}`, "PATCH", { name }),
+  // PATCH takes a partial body, so renaming and toggling dashboard visibility
+  // are independent and neither overwrites the other.
+  updateCategory: (id, patch) => authed(`/api/categories/${id}`, "PATCH", patch),
   deleteCategory: (id) => authed(`/api/categories/${id}`, "DELETE"),
+
+  listCategoryImages: (id) => get(`/api/categories/${id}/images`),
+  replaceCategoryImages: (id, images) =>
+    authed(`/api/categories/${id}/images`, "PUT", { images }),
+  addCategoryImage: (id, imageUrl) =>
+    authed(`/api/categories/${id}/images`, "POST", { image_url: imageUrl }),
+  deleteCategoryImage: (id, imageId) =>
+    authed(`/api/categories/${id}/images/${imageId}`, "DELETE"),
 
   listProjects: (categoryId) =>
     get(categoryId ? `/api/projects?category_id=${categoryId}` : "/api/projects"),
@@ -112,4 +122,17 @@ export const api = {
   deleteProject: (id) => authed(`/api/projects/${id}`, "DELETE"),
 
   signUpload: (folder) => authed("/api/sign-upload", "POST", { folder }),
+
+  listTestimonials: () => get("/api/testimonials"),
+  createTestimonial: (payload) => authed("/api/testimonials", "POST", payload),
+  updateTestimonial: (id, payload) => authed(`/api/testimonials/${id}`, "PUT", payload),
+  moveTestimonial: (id, direction) =>
+    authed(`/api/testimonials/${id}/position?direction=${direction}`, "PUT"),
+  deleteTestimonial: (id) => authed(`/api/testimonials/${id}`, "DELETE"),
+
+  // Public: the contact form. Everything else about leads is admin-only.
+  submitLead: (payload) => request("/api/leads", { method: "POST", body: payload }),
+  listLeads: () => request("/api/leads", { auth: true }),
+  setLeadHandled: (id, handled) => authed(`/api/leads/${id}`, "PATCH", { handled }),
+  deleteLead: (id) => authed(`/api/leads/${id}`, "DELETE"),
 };

@@ -1,111 +1,110 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { bannerImages } from "../../data/banners";
 
-const SLIDES = [
-  {
-    image: bannerImages[0],
-    eyebrow: "Interiors Made To Measure",
-    title: "Dreamy Spaces",
-    subtitle: "Rooms that work as well as they look.",
-  },
-  {
-    image: bannerImages[1],
-    eyebrow: "Wardrobes, Units, Panelling",
-    title: "Built Around Your Day",
-    subtitle: "Storage, surfaces and lighting planned for how you actually live.",
-  },
-  {
-    image: bannerImages[2],
-    eyebrow: "Drawing To Handover",
-    title: "Finished To The Millimetre",
-    subtitle: "Considered detail, honest materials, work that lasts.",
-  },
-];
+/**
+ * Editorial split: copy on the left, an offset image composition on the right.
+ * The two frames crossfade through their own image sets, so the page still
+ * moves without a full-bleed carousel behind the text.
+ */
+
+const CHIPS = ["Design · Make · Install", "Measured to your walls", "One team, start to finish"];
+
+const TALL = [bannerImages[0], bannerImages[1], bannerImages[2]].filter(Boolean);
+const INSET = [bannerImages[3], bannerImages[4], bannerImages[5]].filter(Boolean);
+
+const MARKS = ["Own workshop", "Fixed written quotes", "Bengaluru"];
 
 export default function Hero() {
   const [index, setIndex] = useState(0);
-  const [animationKey, setAnimationKey] = useState(0);
-
-  const goTo = useCallback((next) => {
-    setIndex((next + SLIDES.length) % SLIDES.length);
-  }, []);
+  const count = Math.max(TALL.length, 1);
 
   useEffect(() => {
-    const timer = setInterval(() => setIndex((current) => (current + 1) % SLIDES.length), 8000);
+    if (count < 2) return undefined;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const timer = setInterval(() => setIndex((current) => (current + 1) % count), 6500);
     return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    setAnimationKey((key) => key + 1);
-  }, [index]);
-
-  const slide = SLIDES[index];
+  }, [count]);
 
   return (
-    <section className="hero-section position-relative text-white overflow-hidden d-flex align-items-center">
-      <div className="hero-slides position-absolute top-0 start-0 w-100 h-100">
-        {SLIDES.map((item, i) => (
-          <motion.div
-            key={item.image || i}
-            className="hero-slide"
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={i === index ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.02 }}
-            transition={{ duration: 1.6, ease: "easeOut" }}
-          >
-            <img src={item.image} className="cover-image" alt={item.title} loading="lazy" />
-          </motion.div>
-        ))}
-        <div className="position-absolute top-0 start-0 w-100 h-100 hero-overlay" />
-      </div>
+    <section className="hero">
+      <div className="container hero__inner">
+        <div className="hero__copy">
+          <span className="ds-eyebrow">Interiors made to measure</span>
 
-      <div className="container position-relative py-5">
-        <div className="row justify-content-center">
-          <div className="col-lg-10 text-center">
-            <div className="hero-copy" key={animationKey}>
-              <span className="eyebrow d-block text-light mb-4 hero-anim hero-anim-1">
-                {slide.eyebrow}
-              </span>
-              <h1 className="display-3 fw-bold font-serif mb-3 hero-anim hero-anim-2">
-                {slide.title}
-              </h1>
-              <p className="lead text-light mb-4 text-uppercase hero-anim hero-anim-3">
-                {slide.subtitle}
-              </p>
-              <div className="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-3 hero-anim hero-anim-4">
-                <Link to="/contact" className="btn btn-light px-4 py-3 text-uppercase fw-bold">
-                  Book Free Consultation
-                </Link>
-                <Link
-                  to="/projects"
-                  className="btn btn-outline-light px-4 py-3 text-uppercase fw-bold"
-                >
-                  View Portfolio
-                </Link>
-              </div>
-            </div>
+          <h1 className="hero__title">
+            Rooms built around <em>the way you live</em>
+          </h1>
 
-            <div className="hero-controls d-none d-md-flex">
-              <button
-                type="button"
-                className="hero-control-btn"
-                aria-label="Previous slide"
-                onClick={() => goTo(index - 1)}
-              >
-                <FaChevronLeft />
-              </button>
-              <button
-                type="button"
-                className="hero-control-btn"
-                aria-label="Next slide"
-                onClick={() => goTo(index + 1)}
-              >
-                <FaChevronRight />
-              </button>
-            </div>
+          <p className="hero__lead">
+            Wardrobes, media walls, shoe racks and panelling for homes and offices across
+            Bengaluru. We draw it, make it in our own workshop and fit it ourselves, so one
+            team answers for the whole job.
+          </p>
+
+          <div className="hero__actions">
+            <Link className="btn-clay" to="/contact">
+              Book a free consultation
+            </Link>
+            <Link className="btn-ghost" to="/our-work">
+              See the work
+            </Link>
           </div>
+
+          <ul className="hero__marks">
+            {MARKS.map((mark) => (
+              <li className="hero__mark" key={mark}>
+                {mark}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="hero__stage">
+          <span className="hero__chip">{CHIPS[index % CHIPS.length]}</span>
+
+          <figure className="hero__frame hero__frame--tall">
+            {TALL.map((src, i) => (
+              <img
+                key={src}
+                src={src}
+                alt=""
+                aria-hidden="true"
+                className={`hero__slide ${i === index % TALL.length ? "is-active" : ""}`}
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "auto"}
+              />
+            ))}
+          </figure>
+
+          {INSET.length > 0 && (
+            <figure className="hero__frame hero__frame--inset">
+              {INSET.map((src, i) => (
+                <img
+                  key={src}
+                  src={src}
+                  alt=""
+                  aria-hidden="true"
+                  className={`hero__slide ${i === index % INSET.length ? "is-active" : ""}`}
+                  loading="lazy"
+                />
+              ))}
+            </figure>
+          )}
+
+          {count > 1 && (
+            <div className="hero__dots">
+              {TALL.map((src, i) => (
+                <button
+                  type="button"
+                  key={src}
+                  className={`hero__dot ${i === index ? "is-active" : ""}`}
+                  aria-label={`Show image ${i + 1}`}
+                  onClick={() => setIndex(i)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

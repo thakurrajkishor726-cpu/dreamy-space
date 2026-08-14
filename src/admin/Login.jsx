@@ -20,7 +20,7 @@ export default function Login() {
   return (
     <div className="admin-auth">
       <form className="admin-auth__card" onSubmit={handleSubmit}>
-        <img src="/images/logo/logo.png" alt="Dreamy Spaces" className="admin-auth__logo" />
+        <img src="/images/logo/logo.png" alt="Dreamy Space" className="admin-auth__logo" />
         <h1 className="admin-auth__title">Catalogue Admin</h1>
         <p className="admin-auth__subtitle">Sign in to manage categories and projects.</p>
 

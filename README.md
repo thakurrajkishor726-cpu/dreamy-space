@@ -1,4 +1,4 @@
-# Dreamy Spaces
+# Dreamy Space
 
 An interior design studio site, originally built as a faithful rebuild of
 [creativenconcepts.com](https://creativenconcepts.com/) — same stack, layout, design tokens and

@@ -16,9 +16,13 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-# Must be set before api.db / api.security are imported.
-os.environ.pop("TURSO_URL", None)
-os.environ.pop("TURSO_TOKEN", None)
+# Must be set before server.db / server.security are imported.
+#
+# Set to empty rather than deleted: server/__init__.py fills os.environ from .env
+# with setdefault, so a deleted key would be repopulated from the real Turso
+# credentials and the suite would run against production.
+os.environ["TURSO_URL"] = ""
+os.environ["TURSO_TOKEN"] = ""
 os.environ["CATALOGUE_DB_PATH"] = str(Path(tempfile.mkdtemp()) / "test.db")
 os.environ["JWT_SECRET"] = "test-secret-not-used-anywhere-real"
 os.environ["CLOUDINARY_CLOUD_NAME"] = "testcloud"
@@ -27,9 +31,9 @@ os.environ["CLOUDINARY_API_SECRET"] = "testsecret"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from api import db  # noqa: E402
-from api.index import app  # noqa: E402
-from api.security import hash_password  # noqa: E402
+from server import db  # noqa: E402
+from server.main import app  # noqa: E402
+from server.security import hash_password  # noqa: E402
 
 client = TestClient(app)
 
@@ -319,3 +323,480 @@ def test_health_reports_config_without_leaking_it():
     assert body["database"] == "local"
     assert body["configured"]["cloudinary_secret"] is True
     assert "testsecret" not in str(body)
+
+
+# --------------------------------------------------------------------------
+# Leads (contact form)
+#
+# These rows are prospective customers' personal data. The form has to accept
+# anonymous submissions, but nothing else about them may be public.
+# --------------------------------------------------------------------------
+
+
+LEAD = {
+    "name": "Ananya Sharma",
+    "email": "ananya@example.com",
+    "phone": "9876543210",
+    "service": "TV Unit",
+    "message": "Living room media wall, roughly 10ft, needed by March.",
+}
+
+
+def test_anyone_can_submit_the_contact_form():
+    response = client.post("/api/leads", json=LEAD)
+    assert response.status_code == 201, response.text
+    assert "message" in response.json()
+
+
+def test_submitting_a_lead_does_not_echo_it_back():
+    """A public endpoint that returned the stored row would leak the last
+    submission to whoever posted next."""
+    body = client.post("/api/leads", json=LEAD).json()
+    assert LEAD["email"] not in str(body)
+    assert LEAD["phone"] not in str(body)
+
+
+def test_lead_is_persisted_with_the_submitted_values():
+    client.post("/api/leads", json={**LEAD, "message": "persistence check"})
+    row = db.query_one("SELECT * FROM leads WHERE message = ?", ("persistence check",))
+    assert row["name"] == LEAD["name"]
+    assert row["email"] == LEAD["email"]
+    assert row["handled"] == 0
+
+
+def test_reading_leads_requires_a_token():
+    assert client.get("/api/leads").status_code == 401
+
+
+def test_reading_leads_requires_admin_not_just_a_login():
+    assert client.get("/api/leads", headers=auth(PLAIN)).status_code == 403
+
+
+def test_admin_can_read_leads():
+    rows = client.get("/api/leads", headers=auth(ADMIN)).json()
+    assert any(row["email"] == LEAD["email"] for row in rows)
+
+
+def test_lead_rejects_a_malformed_email():
+    bad = client.post("/api/leads", json={**LEAD, "email": "not-an-email"})
+    assert bad.status_code == 422
+
+
+def test_lead_message_is_length_capped():
+    """Otherwise the public endpoint is a free blob store."""
+    huge = client.post("/api/leads", json={**LEAD, "message": "x" * 5000})
+    assert huge.status_code == 422
+
+
+def test_admin_can_mark_a_lead_handled_and_delete_it():
+    created = client.post("/api/leads", json={**LEAD, "message": "to be handled"})
+    assert created.status_code == 201
+    lead_id = db.query_one("SELECT id FROM leads WHERE message = ?", ("to be handled",))["id"]
+
+    marked = client.patch(f"/api/leads/{lead_id}", json={"handled": True}, headers=auth(ADMIN))
+    assert marked.status_code == 200
+    assert db.query_one("SELECT handled FROM leads WHERE id = ?", (lead_id,))["handled"] == 1
+
+    assert client.delete(f"/api/leads/{lead_id}", headers=auth(ADMIN)).status_code == 204
+    assert db.query_one("SELECT id FROM leads WHERE id = ?", (lead_id,)) is None
+
+
+def test_non_admin_cannot_delete_a_lead():
+    client.post("/api/leads", json={**LEAD, "message": "not yours to delete"})
+    lead_id = db.query_one("SELECT id FROM leads WHERE message = ?", ("not yours to delete",))["id"]
+    assert client.delete(f"/api/leads/{lead_id}", headers=auth(PLAIN)).status_code == 403
+    assert db.query_one("SELECT id FROM leads WHERE id = ?", (lead_id,)) is not None
+
+
+# --------------------------------------------------------------------------
+# Category showcase images + dashboard visibility
+# --------------------------------------------------------------------------
+
+
+def new_category(name):
+    response = client.post("/api/categories", json={"name": name}, headers=auth(ADMIN))
+    assert response.status_code == 201, response.text
+    return response.json()["id"]
+
+
+def test_categories_default_to_showing_on_the_dashboard():
+    category_id = new_category("Defaults Check")
+    row = next(c for c in client.get("/api/categories").json() if c["id"] == category_id)
+    assert row["show_in_dashboard"] is True
+    assert row["images"] == []
+
+
+def test_dashboard_visibility_can_be_toggled_without_resending_the_name():
+    category_id = new_category("Toggle Me")
+    response = client.patch(
+        f"/api/categories/{category_id}", json={"show_in_dashboard": False}, headers=auth(ADMIN)
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["show_in_dashboard"] is False
+    # The name must survive a body that never mentioned it.
+    assert response.json()["name"] == "Toggle Me"
+
+
+def test_renaming_leaves_dashboard_visibility_alone():
+    category_id = new_category("Rename Me")
+    client.patch(
+        f"/api/categories/{category_id}", json={"show_in_dashboard": False}, headers=auth(ADMIN)
+    )
+    renamed = client.patch(
+        f"/api/categories/{category_id}", json={"name": "Renamed"}, headers=auth(ADMIN)
+    ).json()
+    assert renamed["name"] == "Renamed"
+    assert renamed["show_in_dashboard"] is False
+
+
+def test_toggling_visibility_requires_admin():
+    category_id = new_category("Guarded")
+    assert (
+        client.patch(
+            f"/api/categories/{category_id}",
+            json={"show_in_dashboard": False},
+            headers=auth(PLAIN),
+        ).status_code
+        == 403
+    )
+
+
+def test_category_images_accept_both_local_paths_and_cloudinary_urls():
+    """The originals are local files; anything added later is a Cloudinary
+    URL. Both live in the same ordered list."""
+    category_id = new_category("Mixed Sources")
+    local = "/images/categories/TV_Unit/image.png"
+    remote = "https://res.cloudinary.com/demo/image/upload/v1/dreamyspaces/tv.jpg"
+
+    response = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": local}, {"image_url": remote}]},
+        headers=auth(ADMIN),
+    )
+    assert response.status_code == 200, response.text
+    assert [row["image_url"] for row in response.json()] == [local, remote]
+    assert [row["position"] for row in response.json()] == [0, 1]
+
+
+def test_reordering_images_keeps_their_row_ids():
+    """Delete-and-recreate would churn ids and created_at on every save."""
+    category_id = new_category("Reorder Me")
+    urls = ["/images/a.png", "/images/b.png", "/images/c.png"]
+    first = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": u} for u in urls]},
+        headers=auth(ADMIN),
+    ).json()
+    ids_by_url = {row["image_url"]: row["id"] for row in first}
+
+    reordered = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": u} for u in reversed(urls)]},
+        headers=auth(ADMIN),
+    ).json()
+
+    assert [row["image_url"] for row in reordered] == list(reversed(urls))
+    assert {row["image_url"]: row["id"] for row in reordered} == ids_by_url
+
+
+def test_replacing_images_drops_the_ones_left_out():
+    category_id = new_category("Prune Me")
+    client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": "/images/x.png"}, {"image_url": "/images/y.png"}]},
+        headers=auth(ADMIN),
+    )
+    remaining = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": "/images/y.png"}]},
+        headers=auth(ADMIN),
+    ).json()
+    assert [row["image_url"] for row in remaining] == ["/images/y.png"]
+
+
+def test_duplicate_images_are_rejected():
+    """Two identical URLs make the diff ambiguous and give the admin grid two
+    tiles it cannot tell apart."""
+    category_id = new_category("Dupe Check")
+    response = client.put(
+        f"/api/categories/{category_id}/images",
+        json={"images": [{"image_url": "/images/same.png"}, {"image_url": "/images/same.png"}]},
+        headers=auth(ADMIN),
+    )
+    assert response.status_code == 422
+
+
+def test_adding_and_deleting_a_single_image():
+    category_id = new_category("Single Ops")
+    created = client.post(
+        f"/api/categories/{category_id}/images",
+        json={"image_url": "/images/one.png"},
+        headers=auth(ADMIN),
+    )
+    assert created.status_code == 201, created.text
+    image_id = created.json()["id"]
+
+    assert len(client.get(f"/api/categories/{category_id}/images").json()) == 1
+
+    deleted = client.delete(
+        f"/api/categories/{category_id}/images/{image_id}", headers=auth(ADMIN)
+    )
+    assert deleted.status_code == 204
+    assert client.get(f"/api/categories/{category_id}/images").json() == []
+
+
+def test_an_image_cannot_be_deleted_through_a_different_category():
+    """Otherwise the category in the path is decorative and any id is fair
+    game."""
+    owner = new_category("Owner Cat")
+    other = new_category("Other Cat")
+    image_id = client.post(
+        f"/api/categories/{owner}/images",
+        json={"image_url": "/images/owned.png"},
+        headers=auth(ADMIN),
+    ).json()["id"]
+
+    assert client.delete(f"/api/categories/{other}/images/{image_id}", headers=auth(ADMIN)).status_code == 404
+    assert len(client.get(f"/api/categories/{owner}/images").json()) == 1
+
+
+def test_category_images_are_public_to_read_but_admin_to_write():
+    category_id = new_category("Perms Check")
+    assert client.get(f"/api/categories/{category_id}/images").status_code == 200
+    assert (
+        client.put(
+            f"/api/categories/{category_id}/images",
+            json={"images": [{"image_url": "/images/nope.png"}]},
+        ).status_code
+        == 401
+    )
+    assert (
+        client.put(
+            f"/api/categories/{category_id}/images",
+            json={"images": [{"image_url": "/images/nope.png"}]},
+            headers=auth(PLAIN),
+        ).status_code
+        == 403
+    )
+
+
+def test_deleting_a_category_takes_its_images_with_it():
+    category_id = new_category("Cascade Me")
+    client.post(
+        f"/api/categories/{category_id}/images",
+        json={"image_url": "/images/gone.png"},
+        headers=auth(ADMIN),
+    )
+    assert client.delete(f"/api/categories/{category_id}", headers=auth(ADMIN)).status_code == 204
+    assert db.query_one(
+        "SELECT id FROM category_images WHERE category_id = ?", (category_id,)
+    ) is None
+
+
+# --------------------------------------------------------------------------
+# Schema migration
+#
+# show_in_dashboard was added after the first release. CREATE TABLE IF NOT
+# EXISTS does nothing to a table that already exists and SQLite has no ADD
+# COLUMN IF NOT EXISTS, so without _ensure_column the flag would only ever
+# appear on a brand new database — and never on the live Turso one.
+# --------------------------------------------------------------------------
+
+
+def _probe_columns():
+    return {row["name"] for row in db.query("PRAGMA table_info(migration_probe)")}
+
+
+def test_ensure_column_adds_a_missing_column_to_an_existing_table():
+    db.execute("DROP TABLE IF EXISTS migration_probe")
+    db.execute("CREATE TABLE migration_probe (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
+    db.execute("INSERT INTO migration_probe (name) VALUES ('pre-existing row')")
+    assert "flag" not in _probe_columns()
+
+    db._ensure_column("migration_probe", "flag", "flag INTEGER NOT NULL DEFAULT 1")
+
+    assert "flag" in _probe_columns()
+    row = db.query_one("SELECT name, flag FROM migration_probe")
+    assert row["name"] == "pre-existing row", "existing data must survive the migration"
+    assert row["flag"] == 1, "existing rows must pick up the column default"
+
+    # Every boot calls this, so a second run must be a no-op rather than an error.
+    db._ensure_column("migration_probe", "flag", "flag INTEGER NOT NULL DEFAULT 1")
+    assert "flag" in _probe_columns()
+
+    db.execute("DROP TABLE migration_probe")
+
+
+def test_init_schema_is_safe_to_run_twice():
+    db.init_schema()
+    db.init_schema()
+    assert "show_in_dashboard" in {
+        row["name"] for row in db.query("PRAGMA table_info(categories)")
+    }
+
+
+# --------------------------------------------------------------------------
+# Testimonials
+# --------------------------------------------------------------------------
+
+
+QUOTE = {
+    "name": "Ananya Sharma",
+    "designation": "Homeowner, Whitefield",
+    "rating": 5,
+    "comment": "They measured everything twice and the tall unit is the thing I use most.",
+}
+
+
+def make_quote(**overrides):
+    response = client.post("/api/testimonials", json={**QUOTE, **overrides}, headers=auth(ADMIN))
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def test_testimonials_are_public_to_read():
+    make_quote(name="Publicly Visible")
+    listed = client.get("/api/testimonials")
+    assert listed.status_code == 200
+    assert any(row["name"] == "Publicly Visible" for row in listed.json())
+
+
+def test_creating_a_testimonial_requires_admin():
+    assert client.post("/api/testimonials", json=QUOTE).status_code == 401
+    assert client.post("/api/testimonials", json=QUOTE, headers=auth(PLAIN)).status_code == 403
+
+
+def test_testimonial_round_trips_every_field():
+    created = make_quote(name="Round Trip", rating=4)
+    assert created["name"] == "Round Trip"
+    assert created["designation"] == QUOTE["designation"]
+    assert created["rating"] == 4
+    assert created["comment"] == QUOTE["comment"]
+
+
+def test_rating_must_be_one_to_five():
+    for bad in (0, 6, -1, 99):
+        response = client.post(
+            "/api/testimonials", json={**QUOTE, "rating": bad}, headers=auth(ADMIN)
+        )
+        assert response.status_code == 422, f"rating {bad} should be rejected"
+
+
+def test_database_also_rejects_an_out_of_range_rating():
+    """The API validates, but a star row is rendered by repeating a character
+    `rating` times — a direct SQL write must not be able to break it."""
+    import pytest as _pytest
+
+    with _pytest.raises(Exception):
+        db.execute(
+            "INSERT INTO testimonials (name, comment, rating) VALUES (?, ?, ?)",
+            ("Bad Row", "nope", 9),
+        )
+
+
+def test_whitespace_only_name_or_comment_is_rejected():
+    """min_length alone would pass three spaces and then store an empty
+    string, putting a nameless quote on the home page."""
+    for field in ("name", "comment"):
+        for blank in ("", "   ", "\n\t"):
+            response = client.post(
+                "/api/testimonials", json={**QUOTE, field: blank}, headers=auth(ADMIN)
+            )
+            assert response.status_code == 422, f"{field}={blank!r} should be rejected"
+
+
+def test_surrounding_whitespace_is_trimmed_not_rejected():
+    created = make_quote(name="  Padded Name  ", comment="  Padded comment.  ")
+    assert created["name"] == "Padded Name"
+    assert created["comment"] == "Padded comment."
+
+
+def test_a_rejected_write_does_not_wedge_the_connection():
+    """A statement that raises leaves its transaction open; the thread-local
+    connection is long lived, so the next write would fail with "database is
+    locked" and look nothing like its cause."""
+    import pytest as _pytest
+
+    with _pytest.raises(Exception):
+        db.execute(
+            "INSERT INTO testimonials (name, comment, rating) VALUES (?, ?, ?)",
+            ("Wedge Test", "nope", 42),
+        )
+
+    # The very next write must still succeed.
+    assert make_quote(name="After A Failed Write")["name"] == "After A Failed Write"
+
+
+def test_updating_a_testimonial():
+    created = make_quote(name="Before Edit")
+    updated = client.put(
+        f"/api/testimonials/{created['id']}",
+        json={**QUOTE, "name": "After Edit", "rating": 3},
+        headers=auth(ADMIN),
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["name"] == "After Edit"
+    assert updated.json()["rating"] == 3
+
+
+def test_updating_requires_admin():
+    created = make_quote(name="Guarded Edit")
+    assert client.put(f"/api/testimonials/{created['id']}", json=QUOTE).status_code == 401
+    assert (
+        client.put(
+            f"/api/testimonials/{created['id']}", json=QUOTE, headers=auth(PLAIN)
+        ).status_code
+        == 403
+    )
+
+
+def test_deleting_a_testimonial():
+    created = make_quote(name="To Delete")
+    assert (
+        client.delete(f"/api/testimonials/{created['id']}", headers=auth(ADMIN)).status_code == 204
+    )
+    assert all(row["id"] != created["id"] for row in client.get("/api/testimonials").json())
+
+
+def test_deleting_requires_admin():
+    created = make_quote(name="Guarded Delete")
+    assert client.delete(f"/api/testimonials/{created['id']}", headers=auth(PLAIN)).status_code == 403
+
+
+def test_missing_testimonial_is_404_not_500():
+    assert client.put("/api/testimonials/999999", json=QUOTE, headers=auth(ADMIN)).status_code == 404
+    assert client.delete("/api/testimonials/999999", headers=auth(ADMIN)).status_code == 404
+
+
+def test_reordering_swaps_neighbours_and_holds():
+    """Order is what the site displays, so it has to survive a round trip."""
+    db.execute("DELETE FROM testimonials")
+    first = make_quote(name="First")
+    second = make_quote(name="Second")
+    third = make_quote(name="Third")
+
+    order = lambda: [r["name"] for r in client.get("/api/testimonials").json()]  # noqa: E731
+    assert order() == ["First", "Second", "Third"]
+
+    moved = client.put(
+        f"/api/testimonials/{third['id']}/position?direction=up", headers=auth(ADMIN)
+    )
+    assert moved.status_code == 200, moved.text
+    assert order() == ["First", "Third", "Second"]
+
+    client.put(f"/api/testimonials/{first['id']}/position?direction=down", headers=auth(ADMIN))
+    assert order() == ["Third", "First", "Second"]
+
+    # Already last: a no-op, not an error and not a corrupted order.
+    client.put(f"/api/testimonials/{second['id']}/position?direction=down", headers=auth(ADMIN))
+    assert order() == ["Third", "First", "Second"]
+
+
+def test_reordering_requires_admin():
+    row = client.get("/api/testimonials").json()[0]
+    assert (
+        client.put(
+            f"/api/testimonials/{row['id']}/position?direction=up", headers=auth(PLAIN)
+        ).status_code
+        == 403
+    )

@@ -1,5 +1,6 @@
 import { api } from "./apiClient";
 import { readCache, writeCache } from "./catalogueCache";
+import { loadCategoriesOnce } from "./useCategories";
 import { TESTIMONIALS } from "../data/testimonials";
 
 /**
@@ -37,10 +38,12 @@ export async function loadPublicProjects() {
   if (cached) return cached;
 
   try {
-    const [projects, categories] = await Promise.all([api.listProjects(), api.listCategories()]);
+    // Categories come from the shared loader so this does not fire a second
+    // /api/categories request alongside the one the nav and home grid share.
+    const [projects, shared] = await Promise.all([api.listProjects(), loadCategoriesOnce()]);
     const result = {
       projects: normalise(projects),
-      categories: categories.map((category) => category.name),
+      categories: shared.categories.map((category) => category.name),
       error: null,
     };
     if (result.projects.length) writeCache("projects", result);
@@ -56,20 +59,44 @@ export async function loadPublicProjects() {
 /* ------------------------------------------------------------------ */
 
 /**
- * These used to read the API of the site this project was rebuilt from, which
- * meant the page showed another studio's staff photos under "Our Dedicated
- * Team" and their clients' words as testimonials. That is somebody else's
- * data and somebody else's people, so the feed is disconnected.
- *
- * Both pages already render a clean empty state. Add `team` and
- * `testimonials` tables to the Turso schema when you want your own.
+ * Team has no table yet, so this stays empty rather than showing the staff
+ * photos of the studio this project was rebuilt from.
  */
 export async function loadTeam() {
   return { team: [], error: null };
 }
 
+/**
+ * Testimonials come from the database and are managed in the admin.
+ *
+ * The static list in src/data/testimonials.js is only a fallback for a cold
+ * first load with the API unreachable — the table is the source of truth, and
+ * seeding it is a one-off (scripts/seed_testimonials.py).
+ */
 export async function loadTestimonials() {
-  // Placeholder copy, see src/data/testimonials.js. Swap for a real table
-  // before launch.
-  return { testimonials: TESTIMONIALS, error: null };
+  const cached = readCache("testimonials");
+  if (cached) return cached;
+
+  try {
+    const rows = await api.listTestimonials();
+    const testimonials = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      role: row.designation,
+      rating: row.rating,
+      content: row.comment,
+    }));
+
+    if (testimonials.length) {
+      const result = { testimonials, error: null };
+      writeCache("testimonials", result);
+      return result;
+    }
+    // Empty table means the seed has not been run; show the fallback rather
+    // than an empty page.
+    return { testimonials: TESTIMONIALS, error: null };
+  } catch (error) {
+    console.error("Testimonials read failed:", error);
+    return { testimonials: TESTIMONIALS, error: error.message };
+  }
 }

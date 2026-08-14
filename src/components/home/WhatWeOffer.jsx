@@ -6,42 +6,58 @@ import { CATEGORY_IMAGES } from "../../data/categoryImages";
 import CategorySlideshow from "./CategorySlideshow";
 
 /**
- * Driven entirely by public/images/categories/<Folder_Name>/ — the card title
- * is the folder name with underscores replaced, and the cover is the first
- * image in that folder. Add a folder, run `npm run categories:manifest`, and
- * it shows up here with no code change.
+ * Driven entirely by public/images/categories/<Folder_Name>/ — the tile title
+ * is the folder name with underscores replaced. Add a folder, run
+ * `npm run categories:manifest`, and it appears here with no code change.
+ *
+ * The grid runs 7/5 and 5/7 across twelve columns so the rows alternate rather
+ * than reading as an even three-across block, and the caption sits over the
+ * image instead of in a panel beneath it.
  */
+
+// Column spans for the first four tiles, then it repeats: 7,5 / 5,7.
+const isWide = (index) => index % 4 === 0 || index % 4 === 3;
+
 export default function WhatWeOffer() {
   const rootRef = useRef(null);
-  const cardsRef = useRef([]);
+  const tilesRef = useRef([]);
 
   useLayoutEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
+
     const ctx = gsap.context(() => {
-      cardsRef.current.forEach((card) => {
-        if (!card) return;
-        gsap.set(card, {
-          transformOrigin: "center bottom",
-          transformPerspective: 500,
-          willChange: "transform",
-        });
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+      tilesRef.current.forEach((tile, index) => {
+        if (!tile) return;
+
+        // Tiles rise into place, staggered along each row.
         gsap.fromTo(
-          card,
-          { rotateX: -26, z: -260, y: 40 },
+          tile,
+          { y: 44, opacity: 0 },
           {
-            rotateX: 0,
-            z: 0,
-            y: -20,
-            ease: "none",
-            scrollTrigger: {
-              trigger: card,
-              start: "top 96%",
-              end: "top 34%",
-              scrub: 1.1,
-              invalidateOnRefresh: true,
-            },
+            y: 0,
+            opacity: 1,
+            duration: 0.9,
+            ease: "power3.out",
+            delay: (index % 2) * 0.12,
+            scrollTrigger: { trigger: tile, start: "top 88%", once: true },
           },
         );
+
+        // Slow counter-drift on the media so the grid has depth on scroll.
+        const media = tile.querySelector(".work__media");
+        if (media) {
+          gsap.fromTo(
+            media,
+            { yPercent: -4 },
+            {
+              yPercent: 4,
+              ease: "none",
+              scrollTrigger: { trigger: tile, start: "top bottom", end: "bottom top", scrub: 1 },
+            },
+          );
+        }
       });
     }, rootRef);
 
@@ -52,46 +68,57 @@ export default function WhatWeOffer() {
   if (!CATEGORY_IMAGES.length) return null;
 
   return (
-    <section ref={rootRef} className="section-padding bg-brand-light what-we-offer">
+    <section ref={rootRef} className="work section-padding">
       <div className="container">
-        <div className="what-we-offer__header text-center">
-          <span className="section-heading d-block mb-3">What We Offer</span>
-          <h2 className="display-5 font-serif fw-semibold mb-3">Architectural Design Solutions</h2>
-          <p className="architecture-description mx-auto mb-4">
-            Wardrobes, media walls, shoe racks and panelling, drawn to your dimensions and
-            built in our own workshop.
+        <header className="ds-head ds-head--split">
+          <div className="ds-head__title-block">
+            <span className="ds-eyebrow">What we make</span>
+            <h2 className="ds-title">
+              Six things we build, <em>properly</em>
+            </h2>
+          </div>
+          <p className="ds-lead">
+            Every unit is sized to what goes inside it and cut from the drawing you signed off.
+            Pick a category to see the work up close.
           </p>
-        </div>
+        </header>
 
-        <div className="what-we-offer__grid">
+        <div className="work__grid">
           {CATEGORY_IMAGES.map((category, index) => (
-            <div className="arch-offer-slot" key={category.folder}>
-              <article
-                className="arch-offer-card"
-                ref={(node) => {
-                  cardsRef.current[index] = node;
-                }}
-              >
-                <div className="arch-offer-card__image">
-                  <CategorySlideshow
-                    images={category.images}
-                    alt={category.name}
-                    startDelayMs={index * 600}
-                  />
-                </div>
-                <div className="arch-offer-card__caption">
-                  <span className="arch-offer-card__eyebrow">Our Work</span>
-                  <h5 className="arch-offer-card__title">{category.name}</h5>
-                  <Link
-                    to={`/our-work?category=${encodeURIComponent(category.name)}`}
-                    className="arch-offer-card__cover"
-                    aria-label={`View ${category.name}`}
-                  >
-                    <span aria-hidden="true" />
-                  </Link>
-                </div>
-              </article>
-            </div>
+            <article
+              className={`work__tile ${isWide(index) ? "work__tile--wide" : ""}`}
+              key={category.folder}
+              ref={(node) => {
+                tilesRef.current[index] = node;
+              }}
+            >
+              <div className="work__media">
+                {/* Dots would land under the caption and the index number,
+                    so the tile carries the crossfade on its own. */}
+                <CategorySlideshow
+                  images={category.images}
+                  alt={category.name}
+                  startDelayMs={index * 700}
+                  showDots={false}
+                />
+              </div>
+
+              <span className="work__scrim" aria-hidden="true" />
+              <span className="work__index">{String(index + 1).padStart(2, "0")}</span>
+
+              <div className="work__caption">
+                <h3 className="work__name">{category.name}</h3>
+                <span className="work__go" aria-hidden="true">
+                  →
+                </span>
+              </div>
+
+              <Link
+                className="work__link"
+                to={`/our-work?category=${encodeURIComponent(category.name)}`}
+                aria-label={`View ${category.name}`}
+              />
+            </article>
           ))}
         </div>
       </div>

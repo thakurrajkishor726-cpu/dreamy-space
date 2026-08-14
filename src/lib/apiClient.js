@@ -112,4 +112,10 @@ export const api = {
   deleteProject: (id) => authed(`/api/projects/${id}`, "DELETE"),
 
   signUpload: (folder) => authed("/api/sign-upload", "POST", { folder }),
+
+  // Public: the contact form. Everything else about leads is admin-only.
+  submitLead: (payload) => request("/api/leads", { method: "POST", body: payload }),
+  listLeads: () => request("/api/leads", { auth: true }),
+  setLeadHandled: (id, handled) => authed(`/api/leads/${id}`, "PATCH", { handled }),
+  deleteLead: (id) => authed(`/api/leads/${id}`, "DELETE"),
 };

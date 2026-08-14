@@ -1,58 +1,35 @@
 import { motion } from "framer-motion";
 
-export default function PageHeader({
-  title,
-  subtitle,
-  description,
-  image,
-  imagePosition = "center",
-  overlay = true,
-  showSubtitle = true,
-  showDescription = true,
-}) {
-  const style = image
-    ? {
-        backgroundImage: `url(${image})`,
-        backgroundSize: "cover",
-        backgroundPosition: imagePosition,
-        backgroundRepeat: "no-repeat",
-      }
-    : undefined;
-
+/**
+ * Inner page banner: left-aligned over a darkened photo, with the eyebrow
+ * above the title. `accent` italicises and colours the trailing words.
+ */
+export default function PageHeader({ title, accent, subtitle, description, image }) {
   return (
-    <section
-      className="bg-brand-light section-padding border-bottom position-relative inner-pages-banner overflow-hidden"
-      style={style}
-      aria-labelledby="page-header-title"
-      role="region"
-    >
-      {image && overlay && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(180deg, rgba(25, 35, 36, 0) 0%, rgba(25, 35, 36, 0.4) 80.94%)",
-          }}
-        />
-      )}
-      <div className="container position-relative">
+    <section className="page-header" aria-labelledby="page-header-title">
+      {image && <img className="page-header__bg" src={image} alt="" aria-hidden="true" />}
+      <span className="page-header__scrim" aria-hidden="true" />
+
+      <div className="container">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          className="page-header__inner"
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="col-lg-9"
+          transition={{ duration: 0.7, ease: "easeOut" }}
         >
-          {showSubtitle && subtitle && (
-            <span className="section-heading d-block mb-3">{subtitle}</span>
-          )}
-          <h1 id="page-header-title" className="display-4 fw-bold font-serif text-white mb-3">
+          {subtitle && <span className="ds-eyebrow ds-eyebrow--light">{subtitle}</span>}
+
+          <h1 id="page-header-title" className="page-header__title">
             {title}
+            {accent && (
+              <>
+                {" "}
+                <em>{accent}</em>
+              </>
+            )}
           </h1>
-          {showDescription && description && (
-            <p className="lead text-brand-muted">{description}</p>
-          )}
+
+          {description && <p className="page-header__lead">{description}</p>}
         </motion.div>
       </div>
     </section>

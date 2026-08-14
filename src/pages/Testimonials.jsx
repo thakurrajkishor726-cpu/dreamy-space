@@ -28,12 +28,11 @@ export default function Testimonials() {
   return (
     <div className="bg-brand-light">
       <PageHeader
-        title="Client Stories"
+        title="Client"
+        accent="Stories"
+        subtitle="Testimonials"
+        description="What people say once they have lived with the work for a while."
         image={innerBanner}
-        imagePosition="center center"
-        overlay
-        showSubtitle={false}
-        showDescription={false}
       />
 
       <section className="section-padding">
@@ -49,39 +48,42 @@ export default function Testimonials() {
 
           <div className="row g-4">
             {(testimonials || []).map((item, index) => (
-              <div className="col-12 col-lg-6" key={`${item.name}-${index}`}>
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
+              <div className="col-12 col-md-6 col-xl-4" key={`${item.name}-${index}`}>
+                <motion.figure
+                  initial={{ opacity: 0, y: 26 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.4 }}
-                  transition={{ duration: 0.8, delay: (index % 2) * 0.1 }}
-                  className="card h-100 border-0 shadow-soft position-relative"
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.65, delay: (index % 3) * 0.08 }}
+                  className="quote-card mb-0"
                 >
-                  <div className="card-body testimonial-body">
-                    <div className="mb-3 text-warning">
-                      {"★".repeat(Math.max(1, Math.min(5, item.rating || 5)))}
-                    </div>
-                    <p className="mb-4">“{item.content}”</p>
-                    <div className="d-flex align-items-center gap-3 pt-3 border-top muted-border">
-                      <div className="rounded-circle overflow-hidden avatar-64 bg-brand-mid d-flex align-items-center justify-content-center text-brand fw-semibold">
-                        {item.avatar && item.avatar.trim() !== "" ? (
-                          <img
-                            src={cloudinaryUrl(item.avatar, { width: 128, height: 128 })}
-                            className="cover-image"
-                            alt={item.name}
-                            loading="lazy"
-                          />
-                        ) : (
-                          <span aria-hidden="true">{item.name?.slice(0, 1) || "?"}</span>
-                        )}
-                      </div>
-                      <div>
-                        <h6 className="mb-0 text-brand">{item.name}</h6>
-                        <small className="text-uppercase text-brand-muted">{item.role}</small>
-                      </div>
-                    </div>
+                  <div
+                    className="quote-card__stars"
+                    aria-label={`${Math.max(1, Math.min(5, item.rating || 5))} out of 5`}
+                  >
+                    {"★".repeat(Math.max(1, Math.min(5, item.rating || 5)))}
                   </div>
-                </motion.div>
+
+                  <blockquote className="quote-card__body">{item.content}</blockquote>
+
+                  <figcaption className="quote-card__who">
+                    <span className="quote-card__avatar">
+                      {item.avatar && item.avatar.trim() !== "" ? (
+                        <img
+                          src={cloudinaryUrl(item.avatar, { width: 128, height: 128 })}
+                          className="cover-image"
+                          alt=""
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span aria-hidden="true">{item.name?.slice(0, 1) || "?"}</span>
+                      )}
+                    </span>
+                    <span>
+                      <h2 className="quote-card__name">{item.name}</h2>
+                      <span className="quote-card__role">{item.role}</span>
+                    </span>
+                  </figcaption>
+                </motion.figure>
               </div>
             ))}
           </div>

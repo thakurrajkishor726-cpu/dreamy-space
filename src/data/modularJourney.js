@@ -12,9 +12,11 @@ const images = Object.entries(journeyModules)
 export const JOURNEY_STEPS = [
   {
     id: 1,
-    title: "Visit Our Experience Studio",
+    // Was "Visit Our Experience Studio", which assumed a showroom. Removed
+    // along with the Experience Center section.
+    title: "Tell Us About The Space",
     description:
-      "Walk through finished kitchens and wardrobes, open the drawers, and feel the finishes before you decide anything.",
+      "A call or a WhatsApp message to start: which rooms, roughly what size, what is not working about them now, and when you would like it finished.",
     image: images[0],
   },
   {

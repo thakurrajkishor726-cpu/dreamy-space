@@ -4,6 +4,7 @@ import Login from "./Login";
 import Categories from "./Categories";
 import ProjectList from "./ProjectList";
 import ProjectEditor from "./ProjectEditor";
+import Leads from "./Leads";
 import "./admin.css";
 
 function AdminShell() {
@@ -45,7 +46,7 @@ function AdminShell() {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <Link to="/" className="admin-sidebar__brand">
-          <img src="/images/logo/logo.png" alt="Dreamy Spaces" />
+          <span className="admin-sidebar__wordmark">Dreamy&nbsp;Spaces</span>
         </Link>
 
         <nav className="admin-nav">
@@ -54,6 +55,9 @@ function AdminShell() {
           </NavLink>
           <NavLink to="/admin/categories" className="admin-nav__link">
             Categories
+          </NavLink>
+          <NavLink to="/admin/enquiries" className="admin-nav__link">
+            Enquiries
           </NavLink>
           <a href="/" className="admin-nav__link" target="_blank" rel="noreferrer">
             View site ↗
@@ -74,6 +78,7 @@ function AdminShell() {
           <Route path="projects" element={<ProjectList />} />
           <Route path="projects/:id" element={<ProjectEditor />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="enquiries" element={<Leads />} />
           <Route path="*" element={<Navigate to="projects" replace />} />
         </Routes>
       </main>

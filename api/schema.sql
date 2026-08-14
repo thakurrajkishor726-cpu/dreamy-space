@@ -52,6 +52,23 @@ CREATE TABLE IF NOT EXISTS project_category_images (
     updated_at            TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
+-- Enquiries from the public contact form.
+--
+-- This is personal data belonging to people who have not bought anything yet,
+-- so it stays in your own database and is readable only by an admin token.
+CREATE TABLE IF NOT EXISTS leads (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT    NOT NULL,
+    email       TEXT    NOT NULL,
+    phone       TEXT    NOT NULL DEFAULT '',
+    service     TEXT    NOT NULL DEFAULT '',
+    message     TEXT    NOT NULL DEFAULT '',
+    handled     INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_leads_new   ON leads (handled, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_pc_project  ON project_categories (project_id);
 CREATE INDEX IF NOT EXISTS idx_pc_category ON project_categories (category_id);
 CREATE INDEX IF NOT EXISTS idx_pci_link    ON project_category_images (project_categories_id, position);

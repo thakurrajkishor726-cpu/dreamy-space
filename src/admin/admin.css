@@ -27,6 +27,18 @@
   object-fit: contain;
 }
 
+.admin-sidebar__wordmark {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: #1c2b26;
+  display: inline-block;
+  border-left: 3px solid #a94b29;
+  padding-left: 10px;
+  line-height: 1.2;
+}
+
 .admin-nav {
   display: flex;
   flex-direction: column;
@@ -828,5 +840,90 @@
 
   .image-manager__item {
     flex-wrap: wrap;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Enquiries
+   ------------------------------------------------------------------ */
+
+.admin-leads {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-lead {
+  background: #fff;
+  border: 1px solid #e6e3dd;
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: grid;
+  gap: 12px;
+  border-left: 3px solid #a94b29;
+}
+
+.admin-lead.is-handled {
+  border-left-color: #d8d4cd;
+  background: #fbfaf8;
+}
+
+.admin-lead.is-handled .admin-lead__name {
+  color: #7c7a75;
+}
+
+.admin-lead__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.admin-lead__name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: #1c1c1c;
+}
+
+.admin-lead__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-lead__contact {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+}
+
+.admin-lead__contact a {
+  color: #a94b29;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.admin-lead__contact a:hover {
+  text-decoration: underline;
+}
+
+.admin-lead__message {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #45433f;
+  white-space: pre-wrap;
+  border-top: 1px solid #eeece8;
+  padding-top: 12px;
+}
+
+@media (max-width: 575.98px) {
+  .admin-lead__actions {
+    width: 100%;
+  }
+  .admin-lead__actions .admin-btn {
+    flex: 1;
   }
 }

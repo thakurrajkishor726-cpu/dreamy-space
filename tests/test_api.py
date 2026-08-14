@@ -319,3 +319,86 @@ def test_health_reports_config_without_leaking_it():
     assert body["database"] == "local"
     assert body["configured"]["cloudinary_secret"] is True
     assert "testsecret" not in str(body)
+
+
+# --------------------------------------------------------------------------
+# Leads (contact form)
+#
+# These rows are prospective customers' personal data. The form has to accept
+# anonymous submissions, but nothing else about them may be public.
+# --------------------------------------------------------------------------
+
+
+LEAD = {
+    "name": "Ananya Sharma",
+    "email": "ananya@example.com",
+    "phone": "9876543210",
+    "service": "TV Unit",
+    "message": "Living room media wall, roughly 10ft, needed by March.",
+}
+
+
+def test_anyone_can_submit_the_contact_form():
+    response = client.post("/api/leads", json=LEAD)
+    assert response.status_code == 201, response.text
+    assert "message" in response.json()
+
+
+def test_submitting_a_lead_does_not_echo_it_back():
+    """A public endpoint that returned the stored row would leak the last
+    submission to whoever posted next."""
+    body = client.post("/api/leads", json=LEAD).json()
+    assert LEAD["email"] not in str(body)
+    assert LEAD["phone"] not in str(body)
+
+
+def test_lead_is_persisted_with_the_submitted_values():
+    client.post("/api/leads", json={**LEAD, "message": "persistence check"})
+    row = db.query_one("SELECT * FROM leads WHERE message = ?", ("persistence check",))
+    assert row["name"] == LEAD["name"]
+    assert row["email"] == LEAD["email"]
+    assert row["handled"] == 0
+
+
+def test_reading_leads_requires_a_token():
+    assert client.get("/api/leads").status_code == 401
+
+
+def test_reading_leads_requires_admin_not_just_a_login():
+    assert client.get("/api/leads", headers=auth(PLAIN)).status_code == 403
+
+
+def test_admin_can_read_leads():
+    rows = client.get("/api/leads", headers=auth(ADMIN)).json()
+    assert any(row["email"] == LEAD["email"] for row in rows)
+
+
+def test_lead_rejects_a_malformed_email():
+    bad = client.post("/api/leads", json={**LEAD, "email": "not-an-email"})
+    assert bad.status_code == 422
+
+
+def test_lead_message_is_length_capped():
+    """Otherwise the public endpoint is a free blob store."""
+    huge = client.post("/api/leads", json={**LEAD, "message": "x" * 5000})
+    assert huge.status_code == 422
+
+
+def test_admin_can_mark_a_lead_handled_and_delete_it():
+    created = client.post("/api/leads", json={**LEAD, "message": "to be handled"})
+    assert created.status_code == 201
+    lead_id = db.query_one("SELECT id FROM leads WHERE message = ?", ("to be handled",))["id"]
+
+    marked = client.patch(f"/api/leads/{lead_id}", json={"handled": True}, headers=auth(ADMIN))
+    assert marked.status_code == 200
+    assert db.query_one("SELECT handled FROM leads WHERE id = ?", (lead_id,))["handled"] == 1
+
+    assert client.delete(f"/api/leads/{lead_id}", headers=auth(ADMIN)).status_code == 204
+    assert db.query_one("SELECT id FROM leads WHERE id = ?", (lead_id,)) is None
+
+
+def test_non_admin_cannot_delete_a_lead():
+    client.post("/api/leads", json={**LEAD, "message": "not yours to delete"})
+    lead_id = db.query_one("SELECT id FROM leads WHERE message = ?", ("not yours to delete",))["id"]
+    assert client.delete(f"/api/leads/{lead_id}", headers=auth(PLAIN)).status_code == 403
+    assert db.query_one("SELECT id FROM leads WHERE id = ?", (lead_id,)) is not None

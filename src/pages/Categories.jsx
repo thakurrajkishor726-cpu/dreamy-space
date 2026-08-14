@@ -48,33 +48,24 @@ export default function Categories() {
   );
 
   return (
-    <div className="bg-white min-vh-100">
+    <div className="bg-brand-light min-vh-100">
       <PageHeader
-        title="Our Work"
+        title="Our"
+        accent="Work"
+        subtitle="Categories"
+        description="Wardrobes, media walls, shoe racks and panelling, photographed as built."
         image={innerBanner}
-        imagePosition="center center"
-        overlay
-        showSubtitle={false}
-        showDescription={false}
       />
 
       <section className="section-padding">
         <div className="container">
-          <div className="d-flex flex-column gap-3 justify-content-center align-items-center mb-4">
-            <span className="section-heading d-block">Categories</span>
-            <h2 className="display-5 fw-semibold font-serif text-brand mb-0 text-center">
-              Wardrobes, units and panelling
-            </h2>
-          </div>
-
-          <div className="d-flex flex-wrap justify-content-center gap-2 mb-5">
+          <div className="ds-filters">
             {names.map((name) => (
               <button
                 key={name}
+                type="button"
                 onClick={() => choose(name)}
-                className={`btn ${
-                  active === name ? "btn-brand text-white" : "btn-outline-brand"
-                } text-uppercase small px-3`}
+                className={`ds-filter ${active === name ? "is-active" : ""}`}
               >
                 {name}
               </button>
@@ -84,7 +75,7 @@ export default function Categories() {
           {shown.map((category) => (
             <div className="mb-5" key={category.name}>
               {active === "All" && (
-                <h3 className="h4 font-serif text-brand mb-3">{category.name}</h3>
+                <h2 className="ds-title h3 mb-4">{category.name}</h2>
               )}
               <div className="row g-3">
                 {category.images.map((src) => (

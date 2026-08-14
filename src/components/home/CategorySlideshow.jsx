@@ -13,7 +13,7 @@ const INTERVAL_MS = 3800;
  * slideshows of large photos is real work, and none of it is worth doing for
  * a card nobody is looking at.
  */
-export default function CategorySlideshow({ images, alt, startDelayMs = 0 }) {
+export default function CategorySlideshow({ images, alt, startDelayMs = 0, showDots = true }) {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(false);
   const rootRef = useRef(null);
@@ -72,7 +72,7 @@ export default function CategorySlideshow({ images, alt, startDelayMs = 0 }) {
         />
       ))}
 
-      {images.length > 1 && (
+      {showDots && images.length > 1 && (
         <div className="cat-slideshow__dots" aria-hidden="true">
           {images.map((src, i) => (
             <span key={src} className={i === index ? "is-active" : ""} />

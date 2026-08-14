@@ -237,7 +237,7 @@ export default function Projects() {
         title="Recent"
         accent="Projects"
         subtitle="Portfolio"
-        description="Jobs we have finished around Bengaluru. Tap any card to page through the photos."
+        description="Work we have finished and handed back. Tap any card to page through the photos."
         image={innerBanner}
       />
 

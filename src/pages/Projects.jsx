@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
+import { FiArrowUpRight, FiMapPin } from "react-icons/fi";
 import PageHeader from "../components/PageHeader";
 import { innerBanner } from "../data/banners";
 import { loadPublicProjects } from "../lib/publicCatalogue";
@@ -126,53 +128,82 @@ function Lightbox({ isOpen, items = [], currentIndex = 0, onClose, onPrev, onNex
   );
 }
 
-function ProjectCard({ project, onClick }) {
+/**
+ * The card used to render only the cover with the first category stamped over
+ * it, so a job called "Whitefield Apartment" in Bengaluru showed up as
+ * "CROCKERY" and nothing else. The project's own name and location lead now;
+ * the categories are secondary, and all of them are listed rather than just
+ * the first.
+ */
+function ProjectCard({ project, onClick, isTarget }) {
   const cover = project.images[0];
+  const extra = project.images.length - 1;
 
   return (
-    <motion.div
+    <motion.article
       layout
+      id={`project-${project.id}`}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.5 }}
-      className="card border-0 shadow-soft h-100 card-lift project-card"
+      className={`project-card ${isTarget ? "is-target" : ""}`}
       role="button"
       tabIndex={0}
+      aria-label={`${project.title}${project.location ? `, ${project.location}` : ""} — view photos`}
       onClick={onClick}
       onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onClick?.()}
     >
       <div className="project-card__media">
         {cover ? (
           <img
-            src={cloudinaryUrl(cover.url, { width: 800, height: 600 })}
-            srcSet={cloudinarySrcSet(cover.url, [400, 800, 1200])}
-            sizes="(max-width: 768px) 100vw, 25vw"
-            className="card-img-top cover-image"
+            src={cloudinaryUrl(cover.url, { width: 900, height: 700 })}
+            srcSet={cloudinarySrcSet(cover.url, [450, 900, 1400])}
+            sizes="(max-width: 576px) 92vw, (max-width: 992px) 46vw, 30vw"
+            className="cover-image"
             alt={project.title}
             loading="lazy"
           />
         ) : (
-          <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-brand-mid text-brand-muted small">
-            Image unavailable
-          </div>
+          <div className="project-card__placeholder">No photos yet</div>
         )}
-        <div className="position-absolute top-0 end-0 m-2 small badge bg-light text-brand fw-semibold text-uppercase project-badge">
-          {project.categories[0] || "Project"}
-        </div>
-        {project.images.length > 1 && (
-          <div className="position-absolute bottom-0 start-0 m-2 small badge bg-dark bg-opacity-75 text-white">
-            {project.images.length} photos
-          </div>
+
+        <span className="project-card__scrim" aria-hidden="true" />
+
+        {extra > 0 && (
+          <span className="project-card__count">
+            +{extra} photo{extra === 1 ? "" : "s"}
+          </span>
+        )}
+
+        <span className="project-card__go" aria-hidden="true">
+          <FiArrowUpRight />
+        </span>
+      </div>
+
+      <div className="project-card__body">
+        <h3 className="project-card__title">{project.title}</h3>
+
+        {project.location && (
+          <p className="project-card__location">
+            <FiMapPin aria-hidden="true" />
+            {project.location}
+          </p>
+        )}
+
+        {project.categories.length > 0 && (
+          <p className="project-card__tags">{project.categories.join(" · ")}</p>
         )}
       </div>
-    </motion.div>
+    </motion.article>
   );
 }
 
 export default function Projects() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeCategory, setActiveCategory] = useState("All");
+  const [targetId, setTargetId] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [visibleCount, setVisibleCount] = useState(12);
   const [projects, setProjects] = useState(null);
@@ -214,6 +245,42 @@ export default function Projects() {
   }, [activeCategory]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+
+  /**
+   * Cards elsewhere on the site link to /projects?project=<id>. Land on the
+   * page, page in far enough for that card to exist, scroll to it and mark it
+   * briefly — better than dropping someone at the top of the grid and letting
+   * them hunt for the one they clicked.
+   */
+  useEffect(() => {
+    if (loading || !projects) return undefined;
+
+    const requested = Number(searchParams.get("project"));
+    if (!requested) return undefined;
+
+    const index = filtered.findIndex((project) => project.id === requested);
+    if (index === -1) return undefined;
+
+    // The card has to be rendered before it can be scrolled to.
+    if (index >= visibleCount) {
+      setVisibleCount(Math.ceil((index + 1) / 12) * 12);
+      return undefined;
+    }
+
+    const node = document.getElementById(`project-${requested}`);
+    if (!node) return undefined;
+
+    setTargetId(requested);
+    node.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Drop the marker and the query param so a refresh or a share of the URL
+    // afterwards is just the portfolio.
+    const timer = setTimeout(() => {
+      setTargetId(null);
+      setSearchParams({}, { replace: true });
+    }, 2600);
+    return () => clearTimeout(timer);
+  }, [loading, projects, filtered, visibleCount, searchParams, setSearchParams]);
 
   // Flatten every visible project's images into one strip so the lightbox can
   // page through a multi-image project and then straight on to the next one.
@@ -285,6 +352,7 @@ export default function Projects() {
                     <div className="col-12 col-md-6 col-lg-3" key={project.id}>
                       <ProjectCard
                         project={project}
+                        isTarget={project.id === targetId}
                         onClick={() => setLightboxIndex(offsets[index])}
                       />
                     </div>

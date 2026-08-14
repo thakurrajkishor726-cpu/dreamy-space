@@ -47,7 +47,9 @@ export default function ProjectHighlights() {
                   transition={{ duration: 0.65, delay: index * 0.1 }}
                   className="project-card card-lift"
                 >
-                  <Link to="/projects" aria-label={project.title}>
+                  {/* Deep-link so the portfolio scrolls to this exact job rather than
+                      dropping the visitor at the top of the grid. */}
+                  <Link to={`/projects?project=${project.id}`} aria-label={project.title}>
                     <div className="project-card__media mb-3">
                       {cover && (
                         <img

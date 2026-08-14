@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { FiMail, FiMapPin, FiPhone } from "react-icons/fi";
+import { FiMail, FiPhone } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import PageHeader from "../components/PageHeader";
 import { contactImage, innerBanner } from "../data/banners";
 import { api, ApiError } from "../lib/apiClient";
-import { COMPANY, addressText, mailHref, telHref, whatsappHref } from "../data/company";
+import { COMPANY, mailHref, telHrefFor, whatsappHref } from "../data/company";
+import LocationMap from "../components/LocationMap";
 import { useCategories } from "../lib/useCategories";
 
 const EMPTY_FORM = { name: "", email: "", phone: "", service: "", message: "" };
@@ -20,10 +21,22 @@ export default function Contact() {
 
   const infoCards = useMemo(
     () => [
-      { key: "location", label: "Studio", val: addressText, href: COMPANY.mapsUrl, Icon: FiMapPin },
-      { key: "phone", label: "Call", val: COMPANY.phone, href: telHref, Icon: FiPhone },
+      ...COMPANY.phones.map((entry, index) => ({
+        key: `phone-${entry.digits}`,
+        label: index === 0 ? "Call" : "Call (alternate)",
+        val: entry.display,
+        href: telHrefFor(entry),
+        Icon: FiPhone,
+      })),
       { key: "email", label: "Email", val: COMPANY.email, href: mailHref, Icon: FiMail },
-      { key: "whatsapp", label: "WhatsApp", val: COMPANY.phone, href: whatsappHref, Icon: FaWhatsapp },
+      {
+        key: "whatsapp",
+        label: "WhatsApp",
+        val: COMPANY.phones.find((entry) => entry.whatsapp)?.display,
+        href: whatsappHref,
+        Icon: FaWhatsapp,
+        external: true,
+      },
     ],
     [],
   );
@@ -119,12 +132,12 @@ export default function Contact() {
                 </div>
 
                 <div className="row g-3">
-                  {infoCards.map(({ key, label, val, href, Icon }) => (
+                  {infoCards.map(({ key, label, val, href, Icon, external }) => (
                     <div className="col-12 col-sm-6" key={key}>
                       <a
                         className="contact-info-item"
                         href={href}
-                        target={key === "location" || key === "whatsapp" ? "_blank" : undefined}
+                        target={external ? "_blank" : undefined}
                         rel="noreferrer"
                       >
                         <span className="icon-box" aria-hidden="true">
@@ -300,6 +313,16 @@ export default function Contact() {
               </motion.div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="section-padding pt-0">
+        <div className="container">
+          <header className="ds-head">
+            <span className="ds-eyebrow">Find us</span>
+            <h2 className="ds-title">Where the workshop is</h2>
+          </header>
+          <LocationMap />
         </div>
       </section>
     </div>

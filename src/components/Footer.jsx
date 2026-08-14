@@ -6,7 +6,7 @@ import {
   FaLinkedinIn,
 } from "react-icons/fa";
 import { FiClock, FiMail, FiMapPin, FiPhone } from "react-icons/fi";
-import { COMPANY, addressText, mailHref, telHref } from "../data/company";
+import { COMPANY, addressText, mailHref, telHrefFor } from "../data/company";
 import { useCategories } from "../lib/useCategories";
 import Wordmark from "./Wordmark";
 
@@ -112,7 +112,13 @@ export default function Footer() {
               </li>
               <li>
                 <FiPhone aria-hidden="true" />
-                <a href={telHref}>{COMPANY.phone}</a>
+                <span className="ds-footer__phones">
+                  {COMPANY.phones.map((entry) => (
+                    <a href={telHrefFor(entry)} key={entry.digits}>
+                      {entry.display}
+                    </a>
+                  ))}
+                </span>
               </li>
               <li>
                 <FiMail aria-hidden="true" />
